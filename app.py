@@ -38,8 +38,8 @@ def index():
 
 @app.route('/view_pdf')
 def view_pdf():
-    # Direct link to the PDF (must be shareable)
-    pdf_url = "https://drive.google.com/drive/folders/1HS1Sw21S93l_XvKgh7FZIKhaFTANrVcP?usp=sharing"
+    # Google Drive preview link
+    pdf_url = "https://drive.google.com/file/d/1oAKSQEotat3-estig18W2_i9f3Xj78yv/preview"
     return redirect(pdf_url)
     
 @app.route('/calculations')
