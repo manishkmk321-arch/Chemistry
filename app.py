@@ -38,7 +38,7 @@ def index():
 
 @app.route('/view_pdf')
 def view_pdf():
-    pdf_path = os.path.expanduser("~/Downloads/CHEMISTRY RECORD.pdf")
+    pdf_path = os.path.expanduser("~.gitignore/Downloads/CHEMISTRY RECORD.pdf")
     if os.path.exists(pdf_path):
         return send_file(pdf_path, as_attachment=True, download_name="CHEMISTRY_RECORD.pdf", mimetype='application/pdf')
     return "PDF not found at ~/Downloads/CHEMISTRY RECORD.pdf"
