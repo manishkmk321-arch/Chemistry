@@ -38,7 +38,7 @@ def index():
 
 @app.route('/view_pdf')
 def view_pdf():
-    return redirect(url_for('static', filename='CHEMISTRY_RECORD.pdf'))
+    return redirect("https://drive.google.com/file/d/1oAKSQEotat3-estig18W2_i9f3Xj78yv/view?usp=sharing", code=302)
 
 
 

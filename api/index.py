@@ -1,6 +1,6 @@
 import os
 import sys
-from flask import Flask, render_template, send_file
+from flask import Flask, render_template, send_file, redirect
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -45,10 +45,7 @@ def index():
 
 @app.route('/view_pdf')
 def view_pdf():
-    pdf_path = os.path.expanduser("~/Downloads/CHEMISTRY RECORD.pdf")
-    if os.path.exists(pdf_path):
-        return send_file(pdf_path, as_attachment=True, download_name="CHEMISTRY_RECORD.pdf", mimetype='application/pdf')
-    return "PDF not found at ~/Downloads/CHEMISTRY RECORD.pdf"
+    return redirect("https://drive.google.com/file/d/1oAKSQEotat3-estig18W2_i9f3Xj78yv/view?usp=sharing", code=302)
 
 @app.route('/calculations')
 def calculations():
