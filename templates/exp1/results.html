@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Hardness of Water</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Final Results: Hardness of Water</h1>
+        
+        <!-- Concordant Tables -->
+        <div class="result-box">
+            <h2>Titration 1: Standard Hard Water</h2>
+            <table class="result-table">
+                <tr><th>Trial</th><th>Volume of EDTA (mL)</th></tr>
+                {% for vol in t1_edta %}
+                <tr {% if vol == v1 %}class="concordant-row"{% endif %}>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ "%.2f"|format(vol) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <p>Concordant Value (V1) = {{ "%.2f"|format(v1) }} mL</p>
+        </div>
+        
+        <div class="result-box">
+            <h2>Titration 2: Sample Hard Water (Vs = {{ sample_vol }} mL)</h2>
+            <table class="result-table">
+                <tr><th>Trial</th><th>Volume of EDTA (mL)</th></tr>
+                {% for vol in t2_edta %}
+                <tr {% if vol == v2 %}class="concordant-row"{% endif %}>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ "%.2f"|format(vol) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <p>Concordant Value (V2) = {{ "%.2f"|format(v2) }} mL</p>
+        </div>
+        
+        <div class="result-box">
+            <h2>Titration 3: Boiled Hard Water (Vb = {{ boiled_vol }} mL)</h2>
+            <table class="result-table">
+                <tr><th>Trial</th><th>Volume of EDTA (mL)</th></tr>
+                {% for vol in t3_edta %}
+                <tr {% if vol == v3 %}class="concordant-row"{% endif %}>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ "%.2f"|format(vol) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <p>Concordant Value (V3) = {{ "%.2f"|format(v3) }} mL</p>
+        </div>
+        
+        <!-- Final Results Only -->
+        <div class="result-box final-result">
+            <h2>FINAL RESULT</h2>
+            <p>Total Hardness = <strong>{{ total_hardness }} mg/L</strong></p>
+            <p>Permanent Hardness = <strong>{{ permanent_hardness }} mg/L</strong></p>
+            <p>Temporary Hardness = <strong>{{ temporary_hardness }} mg/L</strong></p>
+        </div>
+        
+        <div class="button-group">
+            <a href="/exp1/calculate" class="btn btn-primary">New Calculation</a>
+            <button onclick="window.print()" class="btn btn-secondary">Download PDF</button>
+        </div>
+    </div>
+</body>
+</html>

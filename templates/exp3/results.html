@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Na2CO3 and NaOH</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/exp3/" class="back-link">← Back to Experiments</a>
+        <h1>Final Results</h1>
+        
+        <div class="result-box final-result">
+            <h2>FINAL RESULT</h2>
+            <table class="result-table">
+                <tr>
+                    <th>Parameter</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Strength of Acid</td>
+                    <td>{{ norm_acid }} N</td>
+                </tr>
+                <tr>
+                    <td>The amount of sodium hydroxide</td>
+                    <td><strong>{{ amount_naoh }} g</strong></td>
+                </tr>
+                <tr>
+                    <td>The amount of sodium bicarbonate</td>
+                    <td><strong>{{ amount_nahco3 }} g</strong></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="button-group">
+            <a href="/exp3/" class="btn btn-primary">New Calculation</a>
+        </div>
+    </div>
+</body>
+</html>

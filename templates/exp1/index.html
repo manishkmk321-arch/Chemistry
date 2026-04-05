@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 1 - EDTA Hardness</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Experiment 1: Determination of Hardness of Water using EDTA</h1>
+        
+        <form method="POST" action="/exp1/calculate" id="experimentForm">
+            <input type="hidden" name="show_results" id="showResults" value="0">
+            
+            <section class="experiment-section" id="titration1Section">
+                <h2>Titration 1 - Standardization of EDTA</h2>
+                
+                <div class="form-group">
+                    <label>Volume of Standard Hard Water (mL):</label>
+                    <input type="number" step="0.01" name="standard_hardwater_volume" id="standardHardWaterVolume" placeholder="Enter volume">
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of readings:</label>
+                    <input type="number" name="t1_readings" id="t1_readings" min="0" max="10" placeholder="Enter any value" onchange="generateTable('t1')">
+                    <button type="button" onclick="generateTable('t1')">Generate Table</button>
+                </div>
+                
+                <table class="titration-table" id="t1_table">
+                    <thead>
+                        <tr>
+                            <th>S.N</th>
+                            <th>Initial Burette</th>
+                            <th>Final Burette</th>
+                            <th>Volume Used</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t1_tableBody">
+                    </tbody>
+                </table>
+            </section>
+            
+            <section class="experiment-section" id="titration2Section">
+                <h2>Titration 2 - Total Hardness</h2>
+                
+                <div class="form-group">
+                    <label>Volume of Sample Water (mL):</label>
+                    <input type="number" step="0.01" name="sample_volume" id="sampleVolume" placeholder="Enter volume">
+                </div>
+
+                <div class="form-group">
+                    <label>Number of readings:</label>
+                    <input type="number" name="t2_readings" id="t2_readings" min="0" max="10" placeholder="Enter any value" onchange="generateTable('t2')">
+                    <button type="button" onclick="generateTable('t2')">Generate Table</button>
+                </div>
+
+                <table class="titration-table" id="t2_table">
+                    <thead>
+                        <tr>
+                            <th>S.N</th>
+                            <th>Initial Burette</th>
+                            <th>Final Burette</th>
+                            <th>Volume Used</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t2_tableBody">
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="experiment-section" id="titration3Section">
+                <h2>Titration 3 - Permanent Hardness</h2>
+
+                <div class="form-group">
+                    <label>Volume of Boiled Sample Water (mL):</label>
+                    <input type="number" step="0.01" name="boiled_volume" id="boiledVolume" placeholder="Enter volume">
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of readings:</label>
+                    <input type="number" name="t3_readings" id="t3_readings" min="0" max="10" placeholder="Enter any value" onchange="generateTable('t3')">
+                    <button type="button" onclick="generateTable('t3')">Generate Table</button>
+                </div>
+                
+                <table class="titration-table" id="t3_table">
+                    <thead>
+                        <tr>
+                            <th>S.N</th>
+                            <th>Initial Burette</th>
+                            <th>Final Burette</th>
+                            <th>Volume Used</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t3_tableBody">
+                    </tbody>
+                </table>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" onclick="calculateResults()">Calculate Result</button>
+            </div>
+        </form>
+        
+        <div id="resultSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Results</h2>
+                <div class="result-box">
+                    <h3>Titration 1 - Standardization</h3>
+                    <p>Volume of EDTA Used: <span id="r_v1"></span> mL</p>
+                </div>
+                <div class="result-box">
+                    <h3>Titration 2 - Total Hardness</h3>
+                    <p>Volume of EDTA Used: <span id="r_v2"></span> mL</p>
+                </div>
+                <div class="result-box">
+                    <h3>Titration 3 - Permanent Hardness</h3>
+                    <p>Volume of EDTA Used: <span id="r_v3"></span> mL</p>
+                </div>
+                <div class="result-box final-result">
+                    <h3>Final Result</h3>
+                    <p>Total Hardness: <strong><span id="r_total"></span> ppm</strong></p>
+                    <p>Permanent Hardness: <strong><span id="r_permanent"></span> ppm</strong></p>
+                    <p>Temporary Hardness: <strong><span id="r_temporary"></span> ppm</strong></p>
+                </div>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="editValues()">Edit Values</button>
+                <button type="button" class="btn btn-primary" onclick="showDownloadForm()">Download Calculation</button>
+            </div>
+        </div>
+        
+        <div id="downloadSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Download Calculation</h2>
+                <form method="POST" action="/exp1/download_pdf">
+                    <input type="hidden" name="result_data" id="resultData">
+                    <input type="hidden" name="table_data" id="tableData">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" name="student_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Registration Number:</label>
+                        <input type="text" name="reg_number" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary" onclick="prepareTableData()">Generate PDF</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideDownloadForm()">Cancel</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+    
+    <script>
+        function generateTable(titration) {
+            const readingsInput = document.getElementById(titration + '_readings');
+            const readings = parseInt(readingsInput.value) || 0;
+            const tbody = document.getElementById(titration + '_tableBody');
+            tbody.innerHTML = '';
+            
+            for (let i = 0; i < readings; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="number" step="0.01" name="${titration}_initial_${i}" value="0" onchange="calculateVolume(this, '${titration}', ${i})"></td>
+                    <td><input type="number" step="0.01" name="${titration}_final_${i}" value="0" onchange="calculateVolume(this, '${titration}', ${i})"></td>
+                    <td class="calc-cell" id="${titration}_vol_${i}">0</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        function calculateVolume(changedInput, titration, rowIndex) {
+            const row = changedInput.closest('tr');
+            const initial = parseFloat(row.querySelector('input[name="' + titration + '_initial_' + rowIndex + '"]').value) || 0;
+            const final = parseFloat(row.querySelector('input[name="' + titration + '_final_' + rowIndex + '"]').value) || 0;
+            const volume = Math.abs(final - initial);
+            document.getElementById(titration + '_vol_' + rowIndex).textContent = volume.toFixed(2);
+        }
+        
+        function calculateResults() {
+            const t1Readings = parseInt(document.getElementById('t1_readings').value) || 0;
+            const t2Readings = parseInt(document.getElementById('t2_readings').value) || 0;
+            const t3Readings = parseInt(document.getElementById('t3_readings').value) || 0;
+            
+            let v1List = [];
+            for (let i = 0; i < t1Readings; i++) {
+                const vol = parseFloat(document.getElementById('t1_vol_' + i).textContent) || 0;
+                v1List.push(vol);
+            }
+            
+            let v2List = [];
+            for (let i = 0; i < t2Readings; i++) {
+                const vol = parseFloat(document.getElementById('t2_vol_' + i).textContent) || 0;
+                v2List.push(vol);
+            }
+            
+            let v3List = [];
+            for (let i = 0; i < t3Readings; i++) {
+                const vol = parseFloat(document.getElementById('t3_vol_' + i).textContent) || 0;
+                v3List.push(vol);
+            }
+            
+            const v1 = v1List.length > 0 ? Math.min(...v1List.filter(v => v > 0)) : 0;
+            const v2 = v2List.length > 0 ? Math.min(...v2List.filter(v => v > 0)) : 0;
+            const v3 = v3List.length > 0 ? Math.min(...v3List.filter(v => v > 0)) : 0;
+            const vs = parseFloat(document.getElementById('sampleVolume').value) || 0;
+            const vb = parseFloat(document.getElementById('boiledVolume').value) || 0;
+            const v_std = parseFloat(document.getElementById('standardHardWaterVolume').value) || 0;
+            
+            const totalHardness = (v2 * 1000 / vs) * (v_std / v1);
+            const permanentHardness = (v3 * 1000 / vb) * (v_std / v1);
+            const temporaryHardness = totalHardness - permanentHardness;
+            
+            document.getElementById('r_v1').textContent = v1.toFixed(2);
+            document.getElementById('r_v2').textContent = v2.toFixed(2);
+            document.getElementById('r_v3').textContent = v3.toFixed(2);
+            document.getElementById('r_total').textContent = totalHardness.toFixed(2);
+            document.getElementById('r_permanent').textContent = permanentHardness.toFixed(2);
+            document.getElementById('r_temporary').textContent = temporaryHardness.toFixed(2);
+            
+            const resultData = {
+                v1: v1, v2: v2, v3: v3,
+                v1List: v1List, v2List: v2List, v3List: v3List,
+                vs: vs, vb: vb, v_std: v_std,
+                totalHardness: totalHardness,
+                permanentHardness: permanentHardness,
+                temporaryHardness: temporaryHardness
+            };
+            document.getElementById('resultData').value = JSON.stringify(resultData);
+            
+            document.getElementById('resultSection').style.display = 'block';
+            document.getElementById('resultSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function editValues() {
+            document.getElementById('titration1Section').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function showDownloadForm() {
+            document.getElementById('downloadSection').style.display = 'block';
+            document.getElementById('downloadSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function hideDownloadForm() {
+            document.getElementById('downloadSection').style.display = 'none';
+        }
+        
+        function prepareTableData() {
+            const t1Readings = parseInt(document.getElementById('t1_readings').value) || 0;
+            const t2Readings = parseInt(document.getElementById('t2_readings').value) || 0;
+            const t3Readings = parseInt(document.getElementById('t3_readings').value) || 0;
+            
+            let tableData = { t1: [], t2: [], t3: [] };
+            
+            for (let i = 0; i < t1Readings; i++) {
+                const row = document.querySelector('#t1_tableBody tr:nth-child(' + (i+1) + ')');
+                if (row) {
+                    const inputs = row.querySelectorAll('input');
+                    tableData.t1.push({
+                        initial: inputs[0].value,
+                        final: inputs[1].value,
+                        volume: document.getElementById('t1_vol_' + i).textContent
+                    });
+                }
+            }
+            
+            for (let i = 0; i < t2Readings; i++) {
+                const row = document.querySelector('#t2_tableBody tr:nth-child(' + (i+1) + ')');
+                if (row) {
+                    const inputs = row.querySelectorAll('input');
+                    tableData.t2.push({
+                        initial: inputs[0].value,
+                        final: inputs[1].value,
+                        volume: document.getElementById('t2_vol_' + i).textContent
+                    });
+                }
+            }
+            
+            for (let i = 0; i < t3Readings; i++) {
+                const row = document.querySelector('#t3_tableBody tr:nth-child(' + (i+1) + ')');
+                if (row) {
+                    const inputs = row.querySelectorAll('input');
+                    tableData.t3.push({
+                        initial: inputs[0].value,
+                        final: inputs[1].value,
+                        volume: document.getElementById('t3_vol_' + i).textContent
+                    });
+                }
+            }
+            
+            document.getElementById('tableData').value = JSON.stringify(tableData);
+        }
+    </script>
+</body>
+</html>

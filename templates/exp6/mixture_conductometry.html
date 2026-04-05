@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 6 - Mixture Conductometry</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    {% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Experiment 6: Determination of the Strength of a Mixture of Acetic Acid and Hydrochloric Acid by Conductometry</h1>
+        
+        <form method="POST" id="experimentForm">
+            <section class="experiment-section" id="observationSection">
+                <h2>Observation Table</h2>
+                
+                <div class="form-group">
+                    <label>Number of readings:</label>
+                    <input type="number" id="readings" min="5" max="25" placeholder="Enter any value" oninput="generateTable()" onchange="generateTable()">
+                    <button type="button" onclick="generateTable()">Generate Table</button>
+                </div>
+                
+                <table class="titration-table" id="observationTable">
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Volume of NaOH added (mL)</th>
+                            <th>Conductance (ohm⁻¹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+                
+                <h3>Calculation Parameters</h3>
+                <div class="form-group">
+                    <label>Strength of NaOH (N1):</label>
+                    <input type="number" step="0.0001" id="normNaoh" placeholder="Enter normality">
+                </div>
+                <div class="form-group">
+                    <label>Volume of HCl (V2) in mL:</label>
+                    <input type="number" step="0.01" id="volHcl" placeholder="Enter volume">
+                </div>
+                <div class="form-group">
+                    <label>Volume of CH₃COOH (V4) in mL:</label>
+                    <input type="number" step="0.01" id="volCh3cooh" placeholder="Enter volume">
+                </div>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" onclick="calculateResults()">Calculate</button>
+            </div>
+        </form>
+        
+        <div id="resultSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Results</h2>
+                
+                <div class="graph-container">
+                    <canvas id="conductGraph" width="600" height="350"></canvas>
+                    <p class="graph-caption">Conductance vs Volume of NaOH</p>
+                </div>
+                
+                <div class="result-box">
+                    <h3>End Points from Graph</h3>
+                    <p>I End Point (V1) = <strong><span id="r_v1"></span> mL</strong></p>
+                    <p>II End Point (V2) = <strong><span id="r_v2"></span> mL</strong></p>
+                    <p>Volume of NaOH for CH₃COOH (V3 = V2 − V1) = <strong><span id="r_v3"></span> mL</strong></p>
+                </div>
+                
+                <div class="result-box">
+                    <h3>Calculation — For HCl</h3>
+                    <p>N₂ = (N₁ × V₁) / V₂ = (<span id="r_calc_n1a"></span> × <span id="r_calc_v1a"></span>) / <span id="r_calc_v2a"></span></p>
+                    <p><strong>Normality of HCl (N₂) = <span id="r_N2"></span> N</strong></p>
+                    <p>Amount of HCl = (N₂ × 36.5) / 10 = <span id="r_N2b"></span> × 36.5 / 10 = <strong><span id="r_amtHcl"></span> g</strong></p>
+                </div>
+                
+                <div class="result-box">
+                    <h3>Calculation — For CH₃COOH</h3>
+                    <p>V₃ = V₂ − V₁ = <span id="r_calc_v2b"></span> − <span id="r_calc_v1b"></span> = <span id="r_calc_v3b"></span> mL</p>
+                    <p>N₄ = (N₁ × V₃) / V₄ = (<span id="r_calc_n1b"></span> × <span id="r_calc_v3c"></span>) / <span id="r_calc_v4b"></span></p>
+                    <p><strong>Normality of CH₃COOH (N₄) = <span id="r_N4"></span> N</strong></p>
+                    <p>Amount of CH₃COOH = (N₄ × 60) / 10 = <span id="r_N4b"></span> × 60 / 10 = <strong><span id="r_amtCh3cooh"></span> g</strong></p>
+                </div>
+                
+                <div class="result-box final-result">
+                    <h3>Final Result</h3>
+                    <table class="result-table">
+                        <tr><td>I End Point Volume (V1)</td><td><strong><span id="rf_v1"></span> mL</strong></td></tr>
+                        <tr><td>II End Point Volume (V2)</td><td><strong><span id="rf_v2"></span> mL</strong></td></tr>
+                        <tr><td>Volume of NaOH for CH₃COOH (V3 = V2 − V1)</td><td><strong><span id="rf_v3"></span> mL</strong></td></tr>
+                        <tr><td>Strength of HCl (N₂)</td><td><strong><span id="rf_N2"></span> N</strong></td></tr>
+                        <tr><td>Strength of CH₃COOH (N₄)</td><td><strong><span id="rf_N4"></span> N</strong></td></tr>
+                        <tr><td>Amount of HCl</td><td><strong><span id="rf_amtHcl"></span> g</strong></td></tr>
+                        <tr><td>Amount of CH₃COOH</td><td><strong><span id="rf_amtCh3cooh"></span> g</strong></td></tr>
+                    </table>
+                </div>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="editValues()">Edit Values</button>
+                <button type="button" class="btn btn-primary" onclick="showDownloadFull()">Download Full Report</button>
+            </div>
+        </div>
+        
+        <div id="downloadFullSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Download Full Report</h2>
+                <form method="POST" action="/exp6/download_pdf" target="_blank">
+                    <input type="hidden" name="result_data" id="resultDataFull">
+                    <input type="hidden" name="table_data" id="tableDataFull">
+                    <input type="hidden" name="include_graph" value="true">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" name="student_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Registration Number:</label>
+                        <input type="text" name="reg_number" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" onclick="prepareTableDataFull(this)">Generate PDF</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideDownloadFull()">Cancel</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+    
+    <script>
+        let conductChart = null;
+        let currentResultData = null;
+        
+        function generateTable() {
+            const readings = parseInt(document.getElementById('readings').value) || 0;
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            for (let i = 0; i < readings; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="number" step="0.1" name="volumes" placeholder="Volume"></td>
+                    <td><input type="number" step="0.01" name="conductance" placeholder="Conductance"></td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        // --- Same calculation logic as backend ---
+        function linearRegression(x, y) {
+            const n = x.length;
+            if (n < 2) return { m: 0, c: 0 };
+            const sumX = x.reduce((a, b) => a + b, 0);
+            const sumY = y.reduce((a, b) => a + b, 0);
+            let sumXY = 0, sumX2 = 0;
+            for (let i = 0; i < n; i++) {
+                sumXY += x[i] * y[i];
+                sumX2 += x[i] * x[i];
+            }
+            const denom = n * sumX2 - sumX * sumX;
+            if (denom === 0) return { m: 0, c: 0 };
+            const m = (n * sumXY - sumX * sumY) / denom;
+            const c = (sumY - m * sumX) / n;
+            return { m, c };
+        }
+        
+        function findIntersections(volumes, conductance) {
+            const n = volumes.length;
+            const minC = Math.min(...conductance);
+            const minIdx = conductance.indexOf(minC);
+            
+            if (minIdx < 2 || minIdx > n - 3) {
+                return { v1: volumes[minIdx], v2: volumes[minIdx], minIdx: minIdx, m1: 0, c1: minC, m2: 0, c2: minC, m3: 0, c3: minC };
+            }
+            
+            const v1_data = volumes.slice(0, minIdx + 1);
+            const c1_data = conductance.slice(0, minIdx + 1);
+            
+            const v3_data = volumes.slice(minIdx);
+            const c3_data = conductance.slice(minIdx);
+            
+            const midStart = Math.max(0, minIdx - 2);
+            const midEnd = Math.min(n - 1, minIdx + 2);
+            const v2_data = volumes.slice(midStart, midEnd + 1);
+            const c2_data = conductance.slice(midStart, midEnd + 1);
+            
+            const lr1 = linearRegression(v1_data, c1_data);
+            const lr2 = linearRegression(v2_data, c2_data);
+            const lr3 = linearRegression(v3_data, c3_data);
+            
+            let ep1 = v1_data[v1_data.length - 1];
+            if (lr1.m !== lr2.m) {
+                ep1 = (lr2.c - lr1.c) / (lr1.m - lr2.m);
+            }
+            
+            let ep2 = v3_data[0];
+            if (lr2.m !== lr3.m) {
+                ep2 = (lr3.c - lr2.c) / (lr2.m - lr3.m);
+            }
+            
+            return { v1: ep1, v2: ep2, minIdx: minIdx, m1: lr1.m, c1: lr1.c, m2: lr2.m, c2: lr2.c, m3: lr3.m, c3: lr3.c };
+        }
+        
+        function calculateResults() {
+            const readings = parseInt(document.getElementById('readings').value) || 0;
+            const normNaoh = parseFloat(document.getElementById('normNaoh').value) || 0;
+            const volHcl = parseFloat(document.getElementById('volHcl').value) || 0;
+            const volCh3cooh = parseFloat(document.getElementById('volCh3cooh').value) || 0;
+            
+            if (readings < 5) {
+                alert('Please enter at least 5 readings');
+                return;
+            }
+            if (normNaoh === 0 || volHcl === 0 || volCh3cooh === 0) {
+                alert('Please enter all calculation parameters');
+                return;
+            }
+            
+            try {
+                const rows = document.querySelectorAll('#tableBody tr');
+                const volumes = [];
+                const conductance = [];
+                
+                for (let i = 0; i < rows.length; i++) {
+                    const vol = parseFloat(rows[i].querySelector('input[name="volumes"]').value);
+                    const cond = parseFloat(rows[i].querySelector('input[name="conductance"]').value);
+                    if (isNaN(vol) || isNaN(cond)) {
+                        alert('Please fill all Volume and Conductance values');
+                        return;
+                    }
+                    volumes.push(vol);
+                    conductance.push(cond);
+                }
+                
+                // Same logic as backend
+                const result = findIntersections(volumes, conductance);
+                const v1 = result.v1;
+                const v2 = result.v2;
+                const v3 = v2 - v1;
+                
+                // HCl calculation
+                const N2 = (normNaoh * v1) / volHcl;
+                const amountHcl = (N2 * 36.5) / 10;
+                
+                // CH3COOH calculation
+                const N4 = (normNaoh * v3) / volCh3cooh;
+                const amountCh3cooh = (N4 * 60) / 10;
+                
+                // Regression lines for graph
+                const line1_y = volumes.map(v => result.m1 * v + result.c1);
+                const line2_y = volumes.map(v => result.m2 * v + result.c2);
+                const line3_y = volumes.map(v => result.m3 * v + result.c3);
+                
+                // Update end points
+                document.getElementById('r_v1').textContent = v1.toFixed(2);
+                document.getElementById('r_v2').textContent = v2.toFixed(2);
+                document.getElementById('r_v3').textContent = v3.toFixed(2);
+                
+                // HCl calc display
+                document.getElementById('r_calc_n1a').textContent = normNaoh;
+                document.getElementById('r_calc_v1a').textContent = v1.toFixed(2);
+                document.getElementById('r_calc_v2a').textContent = volHcl;
+                document.getElementById('r_N2').textContent = N2.toFixed(4);
+                document.getElementById('r_N2b').textContent = N2.toFixed(4);
+                document.getElementById('r_amtHcl').textContent = amountHcl.toFixed(4);
+                
+                // CH3COOH calc display
+                document.getElementById('r_calc_v2b').textContent = v2.toFixed(2);
+                document.getElementById('r_calc_v1b').textContent = v1.toFixed(2);
+                document.getElementById('r_calc_v3b').textContent = v3.toFixed(2);
+                document.getElementById('r_calc_n1b').textContent = normNaoh;
+                document.getElementById('r_calc_v3c').textContent = v3.toFixed(2);
+                document.getElementById('r_calc_v4b').textContent = volCh3cooh;
+                document.getElementById('r_N4').textContent = N4.toFixed(4);
+                document.getElementById('r_N4b').textContent = N4.toFixed(4);
+                document.getElementById('r_amtCh3cooh').textContent = amountCh3cooh.toFixed(4);
+                
+                // Final result table
+                document.getElementById('rf_v1').textContent = v1.toFixed(2);
+                document.getElementById('rf_v2').textContent = v2.toFixed(2);
+                document.getElementById('rf_v3').textContent = v3.toFixed(2);
+                document.getElementById('rf_N2').textContent = N2.toFixed(4);
+                document.getElementById('rf_N4').textContent = N4.toFixed(4);
+                document.getElementById('rf_amtHcl').textContent = amountHcl.toFixed(4);
+                document.getElementById('rf_amtCh3cooh').textContent = amountCh3cooh.toFixed(4);
+                
+                // Store result data for PDF
+                const resultData = {
+                    v1: v1, v2: v2, v3: v3,
+                    N1: normNaoh, V2: volHcl, V4: volCh3cooh,
+                    N2: N2, N4: N4,
+                    Amount_HCl: amountHcl, Amount_CH3COOH: amountCh3cooh,
+                    volumes: volumes, conductance: conductance,
+                    line1: line1_y, line2: line2_y, line3: line3_y
+                };
+                currentResultData = resultData;
+                document.getElementById('resultDataFull').value = JSON.stringify(resultData);
+                
+                drawGraph(volumes, conductance, line1_y, line2_y, line3_y, v1, v2);
+                
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('resultSection').scrollIntoView({behavior: 'smooth'});
+            } catch (err) {
+                console.error("Error in calculateResults:", err);
+                alert('An error occurred: ' + err.message);
+            }
+        }
+        
+        function drawGraph(volumes, conductance, line1_y, line2_y, line3_y, v1, v2) {
+            const ctx = document.getElementById('conductGraph').getContext('2d');
+            
+            if (conductChart) conductChart.destroy();
+            
+            conductChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: volumes,
+                    datasets: [
+                        {
+                            label: 'Conductance',
+                            data: conductance,
+                            borderColor: '#7c3aed',
+                            backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                            tension: 0.1,
+                            pointRadius: 4,
+                            fill: false
+                        },
+                        {
+                            label: 'Line 1',
+                            data: line1_y,
+                            borderColor: '#2563eb',
+                            borderDash: [5, 5],
+                            tension: 0,
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: 'Line 2',
+                            data: line2_y,
+                            borderColor: '#059669',
+                            borderDash: [5, 5],
+                            tension: 0,
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: 'Line 3',
+                            data: line3_y,
+                            borderColor: '#dc2626',
+                            borderDash: [5, 5],
+                            tension: 0,
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Conductance vs Volume of NaOH',
+                            font: { size: 14 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Volume of NaOH added (mL)' },
+                            type: 'linear',
+                            min: 0
+                        },
+                        y: {
+                            title: { display: true, text: 'Conductance (ohm⁻¹)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function editValues() {
+            document.getElementById('observationSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function showDownloadFull() {
+            document.getElementById('downloadFullSection').style.display = 'block';
+            document.getElementById('downloadFullSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function hideDownloadFull() {
+            document.getElementById('downloadFullSection').style.display = 'none';
+        }
+        
+        function prepareTableDataFull(btn) {
+            let tableData = [];
+            document.querySelectorAll('#tableBody tr').forEach(function(row) {
+                const inputs = row.querySelectorAll('input');
+                const volume = inputs[0] ? inputs[0].value : '';
+                const conductance = inputs[1] ? inputs[1].value : '';
+                tableData.push({ volume: volume, conductance: conductance });
+            });
+            
+            const jsonStr = JSON.stringify(tableData);
+            document.getElementById('tableDataFull').value = jsonStr;
+            document.getElementById('resultDataFull').value = JSON.stringify(currentResultData);
+            console.log('tableDataFull set to:', jsonStr);
+            
+            if (btn) btn.closest('form').submit();
+        }
+    </script>
+</body>
+</html>

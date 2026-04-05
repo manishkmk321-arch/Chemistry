@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - chloride Estimation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Final Results</h1>
+        
+        <!-- Titration 1 -->
+        <div class="result-box">
+            <h2>Titration 1: Standard NaCl vs AgNO3</h2>
+            <table class="result-table">
+                <tr><th>Trial</th><th>Vol. of AgNO3 (mL)</th></tr>
+                {% for vol in t1_vol_list %}
+                <tr {% if vol == t1_agno3_vol %}class="concordant-row"{% endif %}>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ "%.2f"|format(vol) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <p>Concordant Vol. of AgNO3 = {{ "%.2f"|format(t1_agno3_vol) }} mL</p>
+        </div>
+        
+        <!-- Titration 2 -->
+        <div class="result-box">
+            <h2>Titration 2: Sample vs AgNO3</h2>
+            <table class="result-table">
+                <tr><th>Trial</th><th>Vol. of AgNO3 (mL)</th></tr>
+                {% for vol in t2_vol_list %}
+                <tr {% if vol == t2_agno3_vol %}class="concordant-row"{% endif %}>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ "%.2f"|format(vol) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <p>Concordant Vol. of AgNO3 = {{ "%.2f"|format(t2_agno3_vol) }} mL</p>
+        </div>
+        
+        <!-- Final Result - No Formulas -->
+        <div class="result-box final-result">
+            <h2>FINAL RESULT</h2>
+            <p>Normality of AgNO3 = <strong>{{ norm_agno3 }} N</strong></p>
+            <p>Normality of Sample Solution = <strong>{{ norm_sample }} N</strong></p>
+            <p>Amount of Chlorides Present = <strong>{{ chloride_amount }} mg/L</strong></p>
+        </div>
+        
+        <div class="button-group">
+            <a href="/exp2/" class="btn btn-primary">New Calculation</a>
+            <button onclick="window.print()" class="btn btn-secondary">Download PDF</button>
+        </div>
+    </div>
+</body>
+</html>

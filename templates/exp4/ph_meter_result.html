@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 4 - Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/exp4/" class="back-link">← Back to Experiment</a>
+        <h1>Experiment 4: Results</h1>
+        
+        <section class="experiment-section">
+            <h2>Observation Table</h2>
+            <table class="titration-table">
+                <thead>
+                    <tr>
+                        <th>S.N.</th>
+                        <th>Volume of NaOH added (mL)</th>
+                        <th>pH</th>
+                        <th>ΔpH</th>
+                        <th>ΔV</th>
+                        <th>ΔpH/ΔV</th>
+                        <th>Average Volume (mL)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in calc_data %}
+                    <tr>
+                        <td>{{ row.sn }}</td>
+                        <td>{{ row.volume }}</td>
+                        <td>{{ row.ph }}</td>
+                        <td>{{ row.dph if row.dph is not none else '-' }}</td>
+                        <td>{{ row.dv if row.dv is not none else '-' }}</td>
+                        <td>{{ row.dphdv if row.dphdv is not none else '-' }}</td>
+                        <td>{{ row.avg_vol if row.avg_vol is not none else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        
+        <section class="experiment-section">
+            <h2>Determination of V1</h2>
+            <p>From the table, the maximum ΔpH/ΔV value corresponds to the equivalence point.</p>
+            <p><strong>Volume of NaOH required for complete neutralization (V1) = {{ v1 }} mL</strong></p>
+        </section>
+        
+        <section class="experiment-section">
+            <h2>Calculation</h2>
+            <p>Given: Strength of NaOH (N1) = {{ norm_naoh }} N, Volume of HCl (V2) = {{ vol_acid }} mL</p>
+            <p>Strength of HCl (N2) = (V1 × N1) / V2 = ({{ v1 }} × {{ norm_naoh }}) / {{ vol_acid }} = {{ n2 }} N</p>
+        </section>
+        
+        <section class="experiment-section">
+            <h2>Graphs</h2>
+            
+            <h3>Graph 1: Titration Curve (pH vs Volume of NaOH)</h3>
+            <div class="graph-container">
+                <canvas id="graph1"></canvas>
+                <button onclick="downloadGraph('graph1', 'titration_curve.png')" class="btn btn-secondary">Download Graph 1</button>
+            </div>
+            
+            <h3>Graph 2: First Derivative Curve (ΔpH/ΔV vs Average Volume)</h3>
+            <div class="graph-container">
+                <canvas id="graph2"></canvas>
+                <button onclick="downloadGraph('graph2', 'derivative_curve.png')" class="btn btn-secondary">Download Graph 2</button>
+            </div>
+        </section>
+        
+        <section class="experiment-section">
+            <h2>Final Result</h2>
+            <div class="result-box final-result">
+                <h3>FINAL RESULT</h3>
+                <table class="result-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Volume of NaOH required for complete neutralization (V1)</td>
+                        <td><strong>{{ v1 }} mL</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Strength of HCl (N2)</td>
+                        <td><strong>{{ n2 }} N</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Amount of HCl present in the given solution</td>
+                        <td><strong>{{ amount_hcl }} g</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+        
+        <div class="button-group">
+            <a href="/exp4/" class="btn btn-primary">New Calculation</a>
+        </div>
+    </div>
+    
+    <script>
+        const graph1Data = {{ graph1_data|safe }};
+        const graph2Data = {{ graph2_data|safe }};
+        
+        const ctx1 = document.getElementById('graph1').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: graph1Data.labels,
+                datasets: [{
+                    label: 'pH',
+                    data: graph1Data.data,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.1,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'pH vs Volume of NaOH'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Volume of NaOH (mL)' }
+                    },
+                    y: {
+                        title: { display: true, text: 'pH' }
+                    }
+                }
+            }
+        });
+        
+        const ctx2 = document.getElementById('graph2').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: graph2Data.labels,
+                datasets: [{
+                    label: 'ΔpH/ΔV',
+                    data: graph2Data.data,
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    tension: 0.1,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'ΔpH/ΔV vs Average Volume'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Average Volume of NaOH (mL)' }
+                    },
+                    y: {
+                        title: { display: true, text: 'ΔpH/ΔV' }
+                    }
+                }
+            }
+        });
+        
+        function downloadGraph(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

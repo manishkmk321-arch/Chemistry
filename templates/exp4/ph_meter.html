@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 4 - pH Meter Titration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Experiment 4: Determination of Strength of Acid using pH Meter</h1>
+        
+        <form method="POST" id="experimentForm">
+            <section class="experiment-section" id="observationSection">
+                <h2>Observation Table</h2>
+                
+                <div class="form-group">
+                    <label>Number of readings:</label>
+                    <input type="number" id="readings" min="0" max="20" placeholder="Enter any value" oninput="generateTable()" onchange="generateTable()">
+                    <button type="button" onclick="generateTable()">Generate Table</button>
+                </div>
+                
+                <table class="titration-table" id="observationTable">
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Volume of NaOH Added (mL)</th>
+                            <th>pH</th>
+                            <th>ΔpH</th>
+                            <th>ΔV</th>
+                            <th>ΔpH/ΔV</th>
+                            <th>Average Volume (mL)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+                
+                <h3>Calculation Parameters</h3>
+                <div class="form-group">
+                    <label>Strength of NaOH (N1):</label>
+                    <input type="number" step="0.0001" name="norm_naoh" id="normNaoh" placeholder="Enter normality">
+                </div>
+                <div class="form-group">
+                    <label>Volume of HCl (V2) in mL:</label>
+                    <input type="number" step="0.01" name="vol_acid" id="volAcid" placeholder="Enter volume">
+                </div>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" onclick="calculateResults()">Calculate</button>
+            </div>
+        </form>
+        
+        <div id="resultSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Results</h2>
+                
+                <div class="graph-container">
+                    <canvas id="phGraph" width="600" height="350"></canvas>
+                    <p class="graph-caption">Graph 1: pH vs Volume of NaOH</p>
+                </div>
+                
+                <div class="graph-container">
+                    <canvas id="dphGraph" width="600" height="350"></canvas>
+                    <p class="graph-caption">Graph 2: ΔpH/ΔV vs Average Volume</p>
+                </div>
+                
+                <div class="result-box">
+                    <h3>Equivalence Point</h3>
+                    <p>Volume of NaOH at equivalence point: <strong><span id="r_v1"></span> mL</strong></p>
+                </div>
+                <div class="result-box final-result">
+                    <h3>Final Result</h3>
+                    <p>Strength of HCl: <strong><span id="r_strength"></span> N</strong></p>
+                    <p>Amount of HCl: <strong><span id="r_amount"></span> g/L</strong></p>
+                </div>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="editValues()">Edit Values</button>
+                <button type="button" class="btn btn-primary" onclick="showDownloadFull()">Download Full Report</button>
+            </div>
+        </div>
+        
+
+        
+        <div id="downloadFullSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Download Full Report</h2>
+                <form method="POST" action="/exp4/download_pdf" target="_blank">
+                    <input type="hidden" name="result_data" id="resultDataFull">
+                    <input type="hidden" name="table_data" id="tableDataFull">
+                    <input type="hidden" name="include_graph" value="true">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" name="student_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Registration Number:</label>
+                        <input type="text" name="reg_number" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" onclick="prepareTableDataFull(this)">Generate PDF</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideDownloadFull()">Cancel</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+    
+    <script>
+        let phChart = null;
+        let dphChart = null;
+        let currentResultData = null;
+        
+        function generateTable() {
+            const readings = parseInt(document.getElementById('readings').value) || 0;
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            for (let i = 0; i < readings; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="number" step="0.1" name="volumes" value="0" onchange="calculateRow(this)"></td>
+                    <td><input type="number" step="0.01" name="ph_values" value="0" onchange="calculateRow(this)"></td>
+                    <td class="calc-cell">-</td>
+                    <td class="calc-cell">-</td>
+                    <td class="calc-cell">-</td>
+                    <td class="calc-cell">0.00</td>
+                `;
+                tbody.appendChild(row);
+            }
+            // Trigger initial calculation to populate avg volumes
+            calculateRow(null);
+        }
+        
+        function calculateRow(changedInput) {
+            const rows = document.querySelectorAll('#tableBody tr');
+            const volumes = [];
+            const phValues = [];
+            
+            for (let row of rows) {
+                const vol = parseFloat(row.querySelector('input[name="volumes"]').value) || 0;
+                const ph = parseFloat(row.querySelector('input[name="ph_values"]').value) || 0;
+                volumes.push(vol);
+                phValues.push(ph);
+            }
+            
+            for (let i = 0; i < rows.length; i++) {
+                if (i === 0) {
+                    rows[i].cells[3].textContent = '-';
+                    rows[i].cells[4].textContent = '-';
+                    rows[i].cells[5].textContent = '-';
+                } else {
+                    const dPh = phValues[i] - phValues[i-1];
+                    const dV = volumes[i] - volumes[i-1];
+                    const dPhdV = dV !== 0 ? dPh / dV : 0;
+                    rows[i].cells[3].textContent = dPh.toFixed(4);
+                    rows[i].cells[4].textContent = dV.toFixed(2);
+                    rows[i].cells[5].textContent = dPhdV.toFixed(4);
+                }
+                // Avg Volume = (volumes[i] + volumes[i+1]) / 2
+                if (i < rows.length - 1) {
+                    const avgVol = (volumes[i] + volumes[i + 1]) / 2;
+                    rows[i].cells[6].textContent = avgVol.toFixed(2);
+                } else {
+                    rows[i].cells[6].textContent = '-';
+                }
+            }
+        }
+        
+        function calculateResults() {
+            const readings = parseInt(document.getElementById('readings').value) || 0;
+            const normNaoh = parseFloat(document.getElementById('normNaoh').value) || 0;
+            const volAcid = parseFloat(document.getElementById('volAcid').value) || 0;
+            
+            if (readings < 2) {
+                alert('Please enter at least 2 readings');
+                return;
+            }
+            if (normNaoh === 0 || volAcid === 0) {
+                alert('Please enter NaOH strength and HCl volume');
+                return;
+            }
+            
+            try {
+                const rows = document.querySelectorAll('#tableBody tr');
+                const volumes = [];
+                const phValues = [];
+                const calcData = [];
+                
+                // First pass: collect all volumes and pH
+                for (let i = 0; i < rows.length; i++) {
+                    const vol = parseFloat(rows[i].querySelector('input[name="volumes"]').value) || 0;
+                    const ph = parseFloat(rows[i].querySelector('input[name="ph_values"]').value) || 0;
+                    volumes.push(vol);
+                    phValues.push(ph);
+                }
+                // Second pass: build calcData with Avg Volume = (V[i] + V[i+1]) / 2
+                for (let i = 0; i < rows.length; i++) {
+                    const vol = volumes[i];
+                    const ph = phValues[i];
+                    const avgVol = i < rows.length - 1 ? (volumes[i] + volumes[i + 1]) / 2 : null;
+                    if (i === 0) {
+                        calcData.push({ sn: i + 1, volume: vol, ph: ph, dph: null, dv: null, dphdv: null, avgVol: avgVol });
+                    } else {
+                        const dPh = phValues[i] - phValues[i-1];
+                        const dV = volumes[i] - volumes[i-1];
+                        const dPhdV = dV !== 0 ? dPh / dV : 0;
+                        calcData.push({ sn: i + 1, volume: vol, ph: ph, dph: dPh, dv: dV, dphdv: dPhdV, avgVol: avgVol });
+                    }
+                }
+                
+                let maxDphdv = 0;
+                let v1 = 0;
+                for (let row of calcData) {
+                    if (row.dphdv !== null && row.dphdv > maxDphdv) {
+                        maxDphdv = row.dphdv;
+                        v1 = row.avgVol;
+                    }
+                }
+                
+                const n2 = (v1 * normNaoh) / volAcid;
+                const amountHcl = n2 * 36.45;
+                
+                document.getElementById('r_v1').textContent = v1.toFixed(2);
+                document.getElementById('r_strength').textContent = n2.toFixed(4);
+                document.getElementById('r_amount').textContent = amountHcl.toFixed(4);
+                
+                const resultData = {
+                    v1: v1, maxDphdv: maxDphdv,
+                    normNaoh: normNaoh, volAcid: volAcid,
+                    n2: n2, amountHcl: amountHcl,
+                    volumes: volumes, phValues: phValues, calcData: calcData
+                };
+                currentResultData = resultData;
+                document.getElementById('resultDataFull').value = JSON.stringify(resultData);
+                
+                drawGraphs(volumes, phValues, calcData, v1);
+                
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('resultSection').scrollIntoView({behavior: 'smooth'});
+            } catch (err) {
+                console.error("Error in calculateResults:", err);
+                alert('An error occurred: ' + err.message);
+            }
+        }
+        
+        function drawGraphs(volumes, phValues, calcData, v1) {
+            const ctx1 = document.getElementById('phGraph').getContext('2d');
+            const ctx2 = document.getElementById('dphGraph').getContext('2d');
+            
+            if (phChart) phChart.destroy();
+            if (dphChart) dphChart.destroy();
+            
+            phChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: volumes,
+                    datasets: [{
+                        label: 'pH',
+                        data: phValues,
+                        borderColor: 'blue',
+                        backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'pH vs Volume of NaOH',
+                            font: { size: 14 }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Volume of NaOH (mL)' },
+                            type: 'linear',
+                            min: 0
+                        },
+                        y: {
+                            title: { display: true, text: 'pH' },
+                            min: 0
+                        }
+                    }
+                }
+            });
+            
+            const avgVols = calcData.filter(r => r.avgVol !== null).map(r => r.avgVol);
+            const dphdvVals = calcData.filter(r => r.dphdv !== null).map(r => r.dphdv);
+            
+            dphChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: avgVols,
+                    datasets: [{
+                        label: 'ΔpH/ΔV',
+                        data: dphdvVals,
+                        borderColor: 'red',
+                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'ΔpH/ΔV vs Average Volume',
+                            font: { size: 14 }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Average Volume (mL)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'ΔpH/ΔV' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function editValues() {
+            document.getElementById('observationSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function showDownloadFull() {
+            document.getElementById('downloadFullSection').style.display = 'block';
+            document.getElementById('downloadFullSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function hideDownloadFull() {
+            document.getElementById('downloadFullSection').style.display = 'none';
+        }
+        
+        function prepareTableDataFull(btn) {
+            // Build table data directly from the DOM rows
+            let tableData = [];
+            document.querySelectorAll('#tableBody tr').forEach(function(row) {
+                const inputs = row.querySelectorAll('input');
+                const volume = inputs[0] ? inputs[0].value : '';
+                const ph     = inputs[1] ? inputs[1].value : '';
+                const dph    = row.cells[3] ? row.cells[3].textContent : '-';
+                const dv     = row.cells[4] ? row.cells[4].textContent : '-';
+                const dphdv  = row.cells[5] ? row.cells[5].textContent : '-';
+                const avgVol = row.cells[6] ? row.cells[6].textContent : '-';
+                tableData.push({ volume: volume, ph: ph, dph: dph, dv: dv, dphdv: dphdv, avgVol: avgVol });
+            });
+
+            const jsonStr = JSON.stringify(tableData);
+            document.getElementById('tableDataFull').value = jsonStr;
+            console.log('tableDataFull set to:', jsonStr);
+
+            // Now submit the parent form
+            if (btn) btn.closest('form').submit();
+        }
+    </script>
+</body>
+</html>

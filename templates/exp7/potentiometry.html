@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 7 - Potentiometric Titration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Experiment 7: Determination of Ferrous Ion Using Potassium Dichromate by Potentiometric Titration</h1>
+        
+        <form method="POST" id="experimentForm">
+            <section class="experiment-section" id="observationSection">
+                <h2>Table 1 - Rough Titration</h2>
+                
+                <div class="form-group">
+                    <label>Enter number of readings:</label>
+                    <input type="number" id="rough_readings" min="3" max="20" placeholder="Enter any value" onchange="generateRoughTable()">
+                    <button type="button" onclick="generateRoughTable()">Generate Table</button>
+                </div>
+                
+                <table class="titration-table" id="roughTable">
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Volume of KMnO₄ (mL)</th>
+                            <th>EMF (millivolt)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roughTableBody">
+                    </tbody>
+                </table>
+            </section>
+            
+            <section class="experiment-section">
+                <h2>Table 2 - Fair Titration</h2>
+                
+                <div class="form-group">
+                    <label>Enter number of readings:</label>
+                    <input type="number" id="fair_readings" min="3" max="20" placeholder="Enter any value" onchange="generateFairTable()">
+                    <button type="button" onclick="generateFairTable()">Generate Table</button>
+                </div>
+                
+                <table class="titration-table" id="fairTable">
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Volume of KMnO₄ (mL)</th>
+                            <th>EMF (millivolt)</th>
+                            <th>ΔE</th>
+                            <th>ΔV</th>
+                            <th>ΔE/ΔV</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fairTableBody">
+                    </tbody>
+                </table>
+            </section>
+            
+            <section class="experiment-section">
+                <h3>Calculation Parameters</h3>
+                <div class="form-group">
+                    <label>Normality of KMnO₄ (N1):</label>
+                    <input type="number" step="0.0001" id="norm_kmno4" placeholder="Enter normality">
+                </div>
+                <div class="form-group">
+                    <label>Volume of FAS (V2) in mL:</label>
+                    <input type="number" step="0.01" id="vol_fas" placeholder="Enter volume">
+                </div>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" onclick="calculateResults()">Calculate</button>
+            </div>
+        </form>
+        
+        <div id="resultSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Results</h2>
+                
+                <h3>Rough Titration Graph</h3>
+                <div class="graph-container">
+                    <canvas id="roughGraph" width="600" height="350"></canvas>
+                    <p class="graph-caption">EMF vs Volume of KMnO₄ (Rough)</p>
+                </div>
+                
+                <h3>Fair Titration Graph</h3>
+                <div class="graph-container">
+                    <canvas id="graph" width="600" height="350"></canvas>
+                    <p class="graph-caption">ΔE/ΔV vs Volume of KMnO₄ (Fair)</p>
+                </div>
+                
+                <div class="result-box">
+                    <h3>End Point from Graph</h3>
+                    <p>Equivalence Volume (V1) = <strong><span id="r_v1"></span> mL</strong></p>
+                </div>
+                
+                <div class="result-box">
+                    <h3>Calculation</h3>
+                    <p>N₂ = (N₁ × V₁) / V₂ = (<span id="r_calc_n1"></span> × <span id="r_calc_v1"></span>) / <span id="r_calc_v2"></span></p>
+                    <p><strong>Normality of FAS (N₂) = <span id="r_N2"></span> N</strong></p>
+                    <p>Amount of Ferrous ion = N₂ × 55.85 × 100 / 1000 = (<span id="r_calc_n2"></span> × 55.85 × 100) / 1000 = <strong><span id="r_amount"></span> g/L</strong></p>
+                </div>
+                
+                <div class="result-box final-result">
+                    <h3>Final Result</h3>
+                    <table class="result-table">
+                        <tr><td>Equivalence Volume (V1)</td><td><strong><span id="rf_v1"></span> mL</strong></td></tr>
+                        <tr><td>Strength of FAS (N₂)</td><td><strong><span id="rf_N2"></span> N</strong></td></tr>
+                        <tr><td>Amount of Ferrous ion</td><td><strong><span id="rf_amount"></span> g/L</strong></td></tr>
+                    </table>
+                </div>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="editValues()">Edit</button>
+                <button type="button" class="btn btn-primary" onclick="showDownloadFull()">Download Full Report</button>
+            </div>
+        </div>
+        
+        <div id="downloadFullSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Download Full Report</h2>
+                <form method="POST" action="/exp7/download_pdf" target="_blank">
+                    <input type="hidden" name="result_data" id="resultDataFull">
+                    <input type="hidden" name="table_data" id="tableDataFull">
+                    <input type="hidden" name="include_graph" value="true">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" name="student_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Registration Number:</label>
+                        <input type="text" name="reg_number" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" onclick="prepareTableDataFull(this)">Generate PDF</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideDownloadFull()">Cancel</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+    
+    <script>
+        let potChart = null;
+        let roughChart = null;
+        let currentResultData = null;
+        
+        function generateRoughTable() {
+            const readings = parseInt(document.getElementById('rough_readings').value) || 0;
+            const tbody = document.getElementById('roughTableBody');
+            tbody.innerHTML = '';
+            
+            if (readings <= 0) return;
+            
+            for (let i = 0; i < readings; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="number" step="0.1" name="rough_volumes" value="${i * 2}" required></td>
+                    <td><input type="number" step="0.1" name="rough_emf" placeholder="EMF" required></td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        function generateFairTable() {
+            const readings = parseInt(document.getElementById('fair_readings').value) || 0;
+            const tbody = document.getElementById('fairTableBody');
+            tbody.innerHTML = '';
+            
+            if (readings <= 0) return;
+            
+            for (let i = 0; i < readings; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="number" step="0.1" name="fair_volumes" value="${i * 1}" required onchange="calculateFairRow(this)"></td>
+                    <td><input type="number" step="0.1" name="fair_emf" placeholder="EMF" required onchange="calculateFairRow(this)"></td>
+                    <td class="calc-cell">-</td>
+                    <td class="calc-cell">-</td>
+                    <td class="calc-cell">-</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        function calculateFairRow(changedInput) {
+            const rows = document.querySelectorAll('#fairTableBody tr');
+            const volumes = [];
+            const emfValues = [];
+            
+            for (let row of rows) {
+                const vol = parseFloat(row.querySelector('input[name="fair_volumes"]').value) || 0;
+                const emf = parseFloat(row.querySelector('input[name="fair_emf"]').value) || 0;
+                volumes.push(vol);
+                emfValues.push(emf);
+            }
+            
+            for (let i = 0; i < rows.length; i++) {
+                if (i === 0) {
+                    rows[i].cells[3].textContent = '-';
+                    rows[i].cells[4].textContent = '-';
+                    rows[i].cells[5].textContent = '-';
+                } else {
+                    const de = emfValues[i] - emfValues[i-1];
+                    const dv = volumes[i] - volumes[i-1];
+                    const dedv = dv !== 0 ? de / dv : 0;
+                    
+                    rows[i].cells[3].textContent = de.toFixed(4);
+                    rows[i].cells[4].textContent = dv.toFixed(2);
+                    rows[i].cells[5].textContent = dedv.toFixed(4);
+                }
+            }
+        }
+        
+        function linear_regression(x, y) {
+            const n = x.length;
+            if (n < 2) return { m: 0, c: 0 };
+            
+            const sum_x = x.reduce((a, b) => a + b, 0);
+            const sum_y = y.reduce((a, b) => a + b, 0);
+            const sum_xy = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+            const sum_x2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+            
+            const denom = n * sum_x2 - sum_x * sum_x;
+            if (denom === 0) return { m: 0, c: 0 };
+            
+            const m = (n * sum_xy - sum_x * sum_y) / denom;
+            const c = (sum_y - m * sum_x) / n;
+            
+            return { m, c };
+        }
+        
+        function calculateResults() {
+            const roughVolumes = [];
+            const roughEmf = [];
+            document.querySelectorAll('#roughTableBody tr').forEach(function(row) {
+                const vol = parseFloat(row.querySelector('input[name="rough_volumes"]').value);
+                const emf = parseFloat(row.querySelector('input[name="rough_emf"]').value);
+                if (!isNaN(vol) && !isNaN(emf)) {
+                    roughVolumes.push(vol);
+                    roughEmf.push(emf);
+                }
+            });
+            
+            const fairVolumes = [];
+            const fairEmf = [];
+            document.querySelectorAll('#fairTableBody tr').forEach(function(row) {
+                const vol = parseFloat(row.querySelector('input[name="fair_volumes"]').value);
+                const emf = parseFloat(row.querySelector('input[name="fair_emf"]').value);
+                if (!isNaN(vol) && !isNaN(emf)) {
+                    fairVolumes.push(vol);
+                    fairEmf.push(emf);
+                }
+            });
+            
+            if (roughVolumes.length < 3 || fairVolumes.length < 3) {
+                alert('Please enter at least 3 readings for both tables');
+                return;
+            }
+            
+            const normKmno4 = parseFloat(document.getElementById('norm_kmno4').value);
+            const volFas = parseFloat(document.getElementById('vol_fas').value);
+            
+            if (isNaN(normKmno4) || isNaN(volFas)) {
+                alert('Please enter normality of KMnO4 and volume of FAS');
+                return;
+            }
+            
+            const calcData = [];
+            let maxDedv = 0;
+            let v1 = 0;
+            
+            for (let i = 0; i < fairVolumes.length; i++) {
+                if (i === 0) {
+                    calcData.push({
+                        sn: i + 1,
+                        volume: fairVolumes[i],
+                        emf: fairEmf[i],
+                        de: null,
+                        dv: null,
+                        dedv: null
+                    });
+                } else {
+                    const de = fairEmf[i] - fairEmf[i-1];
+                    const dv = fairVolumes[i] - fairVolumes[i-1];
+                    const dedv = dv !== 0 ? de / dv : 0;
+                    
+                    calcData.push({
+                        sn: i + 1,
+                        volume: fairVolumes[i],
+                        emf: fairEmf[i],
+                        de: round(de, 4),
+                        dv: round(dv, 2),
+                        dedv: round(dedv, 4)
+                    });
+                    
+                    if (dedv > maxDedv) {
+                        maxDedv = dedv;
+                        v1 = (fairVolumes[i] + fairVolumes[i-1]) / 2;
+                    }
+                }
+            }
+            
+            const N2 = (normKmno4 * v1) / volFas;
+            const Amount_Fe = (N2 * 55.85 * 100) / 1000;
+            
+            document.getElementById('r_v1').textContent = v1.toFixed(2);
+            document.getElementById('r_calc_n1').textContent = normKmno4.toFixed(4);
+            document.getElementById('r_calc_v1').textContent = v1.toFixed(2);
+            document.getElementById('r_calc_v2').textContent = volFas.toFixed(2);
+            document.getElementById('r_N2').textContent = N2.toFixed(4);
+            document.getElementById('r_calc_n2').textContent = N2.toFixed(4);
+            document.getElementById('r_amount').textContent = Amount_Fe.toFixed(4);
+            
+            document.getElementById('rf_v1').textContent = v1.toFixed(2);
+            document.getElementById('rf_N2').textContent = N2.toFixed(4);
+            document.getElementById('rf_amount').textContent = Amount_Fe.toFixed(4);
+            
+            const dedvLabels = [];
+            const dedvData = [];
+            calcData.forEach(row => {
+                if (row.dedv !== null) {
+                    dedvLabels.push(row.volume);
+                    dedvData.push(row.dedv);
+                }
+            });
+            
+            drawGraph(dedvLabels, dedvData, v1);
+            drawRoughGraph(roughVolumes, roughEmf);
+            
+            const resultData = {
+                v1: v1,
+                N1: normKmno4,
+                V2: volFas,
+                N2: N2,
+                Amount_Fe: Amount_Fe,
+                rough_volumes: roughVolumes,
+                rough_emf: roughEmf,
+                fair_volumes: fairVolumes,
+                fair_emf: fairEmf,
+                calc_data: calcData,
+                dedv_volumes: dedvLabels,
+                dedv_data: dedvData
+            };
+            currentResultData = resultData;
+            document.getElementById('resultDataFull').value = JSON.stringify(resultData);
+            
+            document.getElementById('resultSection').style.display = 'block';
+            document.getElementById('resultSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function drawGraph(volumes, data, v1) {
+            const ctx = document.getElementById('graph').getContext('2d');
+            
+            if (potChart) potChart.destroy();
+            
+            potChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: volumes,
+                    datasets: [{
+                        label: 'ΔE/ΔV',
+                        data: data,
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        tension: 0.1,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'ΔE/ΔV vs Volume of KMnO₄'
+                        },
+                        annotation: {
+                            annotations: {
+                                v1Line: {
+                                    type: 'line',
+                                    xMin: v1,
+                                    xMax: v1,
+                                    borderColor: 'blue',
+                                    borderWidth: 2,
+                                    label: {
+                                        display: true,
+                                        content: 'Equivalence Point',
+                                        position: 'start'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Volume of KMnO₄ (mL)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'ΔE/ΔV' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function drawRoughGraph(volumes, emf) {
+            const ctx = document.getElementById('roughGraph').getContext('2d');
+            
+            if (roughChart) roughChart.destroy();
+            
+            roughChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: volumes,
+                    datasets: [{
+                        label: 'EMF',
+                        data: emf,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.1,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'EMF vs Volume of KMnO₄'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Volume of KMnO₄ (mL)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'EMF (millivolt)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function round(num, decimals) {
+            return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+        }
+        
+        function editValues() {
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('observationSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function showDownloadFull() {
+            document.getElementById('downloadFullSection').style.display = 'block';
+            document.getElementById('downloadFullSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function hideDownloadFull() {
+            document.getElementById('downloadFullSection').style.display = 'none';
+        }
+        
+        function prepareTableDataFull(btn) {
+            let tableData = [];
+            
+            document.querySelectorAll('#fairTableBody tr').forEach(function(row) {
+                const inputs = row.querySelectorAll('input');
+                const volume = inputs[0] ? inputs[0].value : '';
+                const emf = inputs[1] ? inputs[1].value : '';
+                const de = row.cells[3] ? row.cells[3].textContent : '';
+                const dv = row.cells[4] ? row.cells[4].textContent : '';
+                const dedv = row.cells[5] ? row.cells[5].textContent : '';
+                tableData.push({ volume: volume, emf: emf, de: de, dv: dv, dedv: dedv });
+            });
+            
+            let roughTableData = [];
+            document.querySelectorAll('#roughTableBody tr').forEach(function(row) {
+                const inputs = row.querySelectorAll('input');
+                const volume = inputs[0] ? inputs[0].value : '';
+                const emf = inputs[1] ? inputs[1].value : '';
+                roughTableData.push({ volume: volume, emf: emf });
+            });
+            
+            currentResultData.rough_table_data = roughTableData;
+            
+            const jsonStr = JSON.stringify(tableData);
+            document.getElementById('tableDataFull').value = jsonStr;
+            document.getElementById('resultDataFull').value = JSON.stringify(currentResultData);
+            
+            if (btn) btn.closest('form').submit();
+        }
+    </script>
+</body>
+</html>

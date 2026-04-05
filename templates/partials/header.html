@@ -1,0 +1,136 @@
+<header class="site-header">
+    <div class="header-content">
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="SRM Logo" class="header-logo">
+        </div>
+        <div class="header-center">
+            <h3>SRM Institute of Science and Technology, Tiruchirappalli</h3>
+            <p>Faculty of Engineering and Technology</p>
+            <p class="dept">Department of Chemistry</p>
+        </div>
+    </div>
+</header>
+
+<div class="floating-nav">
+    <div class="nav-menu">
+        <button onclick="showInfo()">Info</button>
+         <button onclick="showAbout()">About Developers</button>
+    </div>
+    <button class="nav-trigger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeModalDirect()">✕</button>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+function showAbout() {
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = `
+        <div class="dev-section">
+            <img src="{{ url_for('static', filename='bibek.png') }}" alt="Bibek Khadka" style="width: 160px; height: 160px; border-radius: 50%; object-fit: cover; margin: 0 auto 15px; display: block; border: 3px solid #1e3a8a;">
+            <div class="dev-name">Bibek Khadka</div>
+            <div class="dev-role" style="color: #6b7280; margin-bottom: 8px;">Role: Backend</div>
+            <div class="dev-contact">Contact: +918448582274</div>
+            <div class="dev-email">Email: mrbibeek12@gmail.com</div>
+        </div>
+        <hr style="margin: 25px 0; border: none; border-top: 1px solid #e5e7eb;">
+        <div class="dev-section">
+            <img src="{{ url_for('static', filename='Dipendra.png') }}" alt="Dipendra Sah" style="width: 160px; height: 160px; border-radius: 50%; object-fit: cover; margin: 0 auto 15px; display: block; border: 3px solid #7c3aed;">
+            <div class="dev-name">Dipendra Sah</div>
+            <div class="dev-role" style="color: #6b7280; margin-bottom: 8px;">Role: Frontend</div>
+            <div class="dev-contact">Contact: +918757072401</div>
+            <div class="dev-email">Email: ds9877@srmist.edu.in</div>
+        </div>
+        <div style="margin-top: 30px; padding: 15px; background: #eff6ff; border-radius: 8px; text-align: center;">
+            <p style="font-weight: 600; color: #1e3a8a;">For more information reach out through WhatsApp: +977 9867154760</p>
+        </div>
+    `;
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function showInfo() {
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = `
+        <h2>Chemistry Lab Web Application</h2>
+        <div class="info-content">
+            <p>This project is a comprehensive digital chemistry laboratory system designed to simplify and modernize traditional lab work. It provides an interactive platform where students can perform virtual experiments, record observations, carry out calculations, and generate professional lab reports automatically.</p>
+            
+            <p><strong>Objective</strong></p>
+            <p>The main goal of this project is to eliminate manual calculation errors, reduce paperwork, and provide a smart, user-friendly environment for conducting chemistry experiments digitally.</p>
+            
+            <p><strong>Key Features</strong></p>
+            <p><strong>1. Multiple Experiment Support</strong><br>
+            The system includes 8 major chemistry experiments:</p>
+            <ul>
+                <li>DETERMINATION OF HARDNESS (Ca²⁺) OF WATER USING EDTA COMPLEXOMETRY METHOD</li>
+                <li>ESTIMATION OF AMOUNT OF CHLORIDE CONTENT OF A WATER SAMPLE</li>
+                <li>DETERMINATION OF THE AMOUNT OF SODIUM CARBONATE AND SODIUM HYDROXIDE IN A MIXTURE BY TITRATION</li>
+                <li>DETERMINATION OF STRENGTH OF AN ACID USING pH METER</li>
+                <li>DETERMINATION OF STRENGTH OF AN ACID BY CONDUCTOMETRY</li>
+                <li>DETERMINATION OF THE STRENGTH OF A MIXTURE OF ACETIC ACID AND HYDROCHLORIC ACID BY CONDUCTOMETRY</li>
+                <li>DETERMINATION OF FERROUS ION USING POTASSIUM DICHROMATE BY POTENTIOMETRIC TITRATION</li>
+                <li>DETERMINATION OF MOLECULAR WEIGHT OF A POLYMER BY VISCOSITY AVERAGE METHOD</li>
+            </ul>
+            
+            <p><strong>2. Dynamic Table Generation</strong><br>
+            Users can select the number of readings. Tables are generated dynamically. All input fields are initialized to 0 by default. Calculated fields are auto-computed.</p>
+            
+            <p><strong>3. Automatic Calculations</strong><br>
+            The system performs step-by-step calculations, concordant value detection, average calculations, and formula-based result generation.</p>
+            
+            <p><strong>4. Edit Values Feature</strong><br>
+            Users can modify entered values even after calculation. No need to restart the experiment.</p>
+            
+            <p><strong>5. Graph Generation</strong><br>
+            For relevant experiments, graphs are automatically plotted to identify equivalence/end points visually.</p>
+            
+            <p><strong>6. Professional PDF Report Generation</strong><br>
+            Users can download a complete lab report including experiment title, date, name, registration number, observation tables, graphs, calculations, and final results.</p>
+            
+            <p><strong>7. Consistent UI & Table Design</strong><br>
+            Uniform table format across all experiments with proper borders, alignment, and formatting.</p>
+            
+            <p><strong>8. Error Handling & Data Safety</strong><br>
+            Handles empty or incorrect inputs safely and ensures smooth user experience.</p>
+            
+            <p><strong>Technologies Used</strong></p>
+            <p>Frontend: HTML, CSS, JavaScript<br>Backend: Python (Flask)<br>PDF Generation: ReportLab<br>Graph Plotting: Matplotlib</p>
+            
+            <p><strong>Developers</strong></p>
+            <p><strong>Bibek Khadka</strong> - Backend (PDF Generation & Graph)<br>
+            <strong>Dipendra Sah</strong> - Frontend</p>
+            
+            <p><strong>Contact for More Information</strong></p>
+            <p>WhatsApp: +977 9867154760</p>
+            
+            <p><strong>Outcome</strong></p>
+            <p>This project transforms traditional lab work into a smart digital system, making experiments faster, more accurate, easy to manage, and professionally documented.</p>
+            
+            <p><strong>Future Enhancements</strong></p>
+            <p>Database integration, user login system, cloud storage for reports, and AI-based error detection.</p>
+            
+            <p><strong>Conclusion</strong></p>
+            <p>This Chemistry Lab Web Application is a complete automation system that bridges the gap between traditional laboratory practices and modern technology.</p>
+        </div>
+    `;
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal(event) {
+    if (event.target === document.getElementById('modalOverlay')) {
+        document.getElementById('modalOverlay').classList.remove('active');
+    }
+}
+
+function closeModalDirect() {
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+</script>

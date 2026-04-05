@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 6 - End Points Found</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/exp6/" class="back-link">← Back</a>
+        <h1>Experiment 6: End Points Found</h1>
+
+        <section class="experiment-section">
+            <h2>Graph</h2>
+            <div class="graph-container">
+                <canvas id="conductGraph"></canvas>
+            </div>
+        </section>
+
+        <section class="experiment-section">
+            <h2>End Points from Graph</h2>
+            <div class="result-box">
+                <p><strong>I End Point (V1) = {{ v1 }} mL</strong></p>
+                <p><strong>II End Point (V2) = {{ v2 }} mL</strong></p>
+                <p><strong>Volume of NaOH for CH3COOH (V3 = V2 − V1) = {{ v3 }} mL</strong></p>
+            </div>
+        </section>
+
+        <section class="experiment-section">
+            <h2>Calculation</h2>
+            <form method="POST" action="/exp6/final_result">
+                <div class="form-group">
+                    <label>Strength of NaOH (N1):</label>
+                    <input type="number" step="0.0001" name="norm_naoh" value="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label>Volume of HCl (V2) in mL:</label>
+                    <input type="number" step="0.01" name="vol_hcl" value="20" required>
+                </div>
+                <div class="form-group">
+                    <label>Volume of CH3COOH (V4) in mL:</label>
+                    <input type="number" step="0.01" name="vol_ch3cooh" value="20" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Calculate Final Results</button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        const graphData = JSON.parse('{{ graph_data | tojson | safe }}');
+
+        const ctx = document.getElementById('conductGraph').getContext('2d');
+
+        const v1 = graphData.v1;
+        const v2 = graphData.v2;
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: graphData.labels,
+                datasets: [
+                    {
+                        label: 'Conductance',
+                        data: graphData.conductance,
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                        tension: 0.1,
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'Line 1',
+                        data: graphData.line1,
+                        borderColor: '#2563eb',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Line 2',
+                        data: graphData.line2,
+                        borderColor: '#059669',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Line 3',
+                        data: graphData.line3,
+                        borderColor: '#dc2626',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'I End Point',
+                        data: [{ x: v1, y: 0 }, { x: v1, y: Math.max(...graphData.conductance) }],
+                        borderColor: '#2563eb',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        showLine: true
+                    },
+                    {
+                        label: 'II End Point',
+                        data: [{ x: v2, y: 0 }, { x: v2, y: Math.max(...graphData.conductance) }],
+                        borderColor: '#dc2626',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        showLine: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Conductance vs Volume of NaOH'
+                    },
+                    annotation: {
+                        annotations: {
+                            v1Line: {
+                                type: 'line',
+                                xMin: v1,
+                                xMax: v1,
+                                borderColor: 'blue',
+                                borderWidth: 2,
+                                label: {
+                                    display: true,
+                                    content: 'I End Point (V1)',
+                                    position: 'start'
+                                }
+                            },
+                            v2Line: {
+                                type: 'line',
+                                xMin: v2,
+                                xMax: v2,
+                                borderColor: 'red',
+                                borderWidth: 2,
+                                label: {
+                                    display: true,
+                                    content: 'II End Point (V2)',
+                                    position: 'start'
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Volume of NaOH added (mL)' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Conductance (ohm⁻¹)' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

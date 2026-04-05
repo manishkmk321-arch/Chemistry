@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardness of Water - EDTA Method</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Determination of Hardness of Water (EDTA Method)</h1>
+        
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+        
+        <form method="POST" action="/exp1/calculate">
+            <!-- Titration 1: Standard Hard Water -->
+            <div class="result-box">
+                <h2>Titration 1: Standard Hard Water</h2>
+                <table class="titration-table">
+                    <thead>
+                        <tr>
+                            <th>Trial</th>
+                            <th>Initial Burette (mL)</th>
+                            <th>Final Burette (mL)</th>
+                            <th>Volume of EDTA (mL)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><input type="number" step="0.01" name="t1_initial_0" required></td>
+                            <td><input type="number" step="0.01" name="t1_final_0" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><input type="number" step="0.01" name="t1_initial_1" required></td>
+                            <td><input type="number" step="0.01" name="t1_final_1" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><input type="number" step="0.01" name="t1_initial_2" required></td>
+                            <td><input type="number" step="0.01" name="t1_final_2" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Titration 2: Sample Hard Water -->
+            <div class="result-box">
+                <h2>Titration 2: Sample Hard Water</h2>
+                <div class="form-group">
+                    <label>Volume of Sample Water (mL):</label>
+                    <input type="number" step="0.01" name="sample_volume" value="50" required>
+                </div>
+                <table class="titration-table">
+                    <thead>
+                        <tr>
+                            <th>Trial</th>
+                            <th>Initial Burette (mL)</th>
+                            <th>Final Burette (mL)</th>
+                            <th>Volume of EDTA (mL)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><input type="number" step="0.01" name="t2_initial_0" required></td>
+                            <td><input type="number" step="0.01" name="t2_final_0" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><input type="number" step="0.01" name="t2_initial_1" required></td>
+                            <td><input type="number" step="0.01" name="t2_final_1" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><input type="number" step="0.01" name="t2_initial_2" required></td>
+                            <td><input type="number" step="0.01" name="t2_final_2" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Titration 3: Boiled Hard Water -->
+            <div class="result-box">
+                <h2>Titration 3: Boiled Hard Water</h2>
+                <div class="form-group">
+                    <label>Volume of Boiled Water (mL):</label>
+                    <input type="number" step="0.01" name="boiled_volume" value="50" required>
+                </div>
+                <table class="titration-table">
+                    <thead>
+                        <tr>
+                            <th>Trial</th>
+                            <th>Initial Burette (mL)</th>
+                            <th>Final Burette (mL)</th>
+                            <th>Volume of EDTA (mL)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><input type="number" step="0.01" name="t3_initial_0" required></td>
+                            <td><input type="number" step="0.01" name="t3_final_0" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><input type="number" step="0.01" name="t3_initial_1" required></td>
+                            <td><input type="number" step="0.01" name="t3_final_1" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><input type="number" step="0.01" name="t3_initial_2" required></td>
+                            <td><input type="number" step="0.01" name="t3_final_2" required></td>
+                            <td class="calc-cell">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Calculate Hardness</button>
+                <a href="/exp1/reset" class="btn btn-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

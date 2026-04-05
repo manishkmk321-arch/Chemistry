@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculation - Titration 1</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <a href="/exp3/titration1" class="back-link">← Back</a>
+        <h1>Titration 1 Calculation</h1>
+        
+        <div class="result-box">
+            <h2>Titration 1 Results</h2>
+            <p>Volume of NaOH: <strong>{{ vol_naoh }} mL</strong></p>
+            <p>Concordant Volume of HCl: <strong>{{ hcl_vol }} mL</strong></p>
+        </div>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label>Normality of Standard NaOH (N):</label>
+                <input type="number" step="0.0001" name="norm_naoh" value="0.1" required>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Calculate & Next</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 6 - Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/exp6/" class="back-link">← Back to Experiment</a>
+        <h1>Experiment 6: Results</h1>
+
+        <section class="experiment-section">
+            <h2>Observation Table</h2>
+            <table class="titration-table">
+                <thead>
+                    <tr>
+                        <th>S.N.</th>
+                        <th>Volume of NaOH added (mL)</th>
+                        <th>Conductance (ohm⁻¹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in range(volumes|length) %}
+                    <tr>
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ volumes[i] }}</td>
+                        <td>{{ conductance[i] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="experiment-section">
+            <h2>Graph</h2>
+            <div class="graph-container">
+                <canvas id="conductGraph"></canvas>
+                <button onclick="downloadGraph()" class="btn btn-secondary">Download Graph</button>
+            </div>
+        </section>
+
+        <section class="experiment-section">
+            <h2>End Points from Graph</h2>
+            <div class="result-box">
+                <p><strong>I End Point (V1) = {{ v1 }} mL</strong></p>
+                <p><strong>II End Point (V2) = {{ v2 }} mL</strong></p>
+                <p><strong>Volume of NaOH for CH3COOH (V3 = V2 − V1) = {{ v3 }} mL</strong></p>
+            </div>
+        </section>
+
+        <section class="experiment-section">
+            <h2>Calculation</h2>
+            <p><strong>Given:</strong></p>
+            <ul>
+                <li>Strength of NaOH (N1) = {{ N1 }} N</li>
+                <li>Volume of HCl (V2) = {{ V2 }} mL</li>
+                <li>Volume of CH3COOH (V4) = {{ V4 }} mL</li>
+            </ul>
+            <hr>
+            <p><strong>For HCl:</strong></p>
+            <p>N2 = (N1 × V1) / V2 = ({{ N1 }} × {{ v1 }}) / {{ V2 }} = {{ N2 }} N</p>
+            <p>Amount of HCl = (N2 × 36.5) / 10 = ({{ N2 }} × 36.5) / 10 = {{ Amount_HCl }} g</p>
+            <hr>
+            <p><strong>For CH3COOH:</strong></p>
+            <p>V3 = V2 − V1 = {{ v2 }} − {{ v1 }} = {{ v3 }} mL</p>
+            <p>N4 = (N1 × V3) / V4 = ({{ N1 }} × {{ v3 }}) / {{ V4 }} = {{ N4 }} N</p>
+            <p>Amount of CH3COOH = (N4 × 60) / 10 = ({{ N4 }} × 60) / 10 = {{ Amount_CH3COOH }} g</p>
+        </section>
+
+        <section class="experiment-section">
+            <h2>Final Result</h2>
+            <div class="result-box final-result">
+                <h3>RESULT</h3>
+                <table class="result-table">
+                    <tr>
+                        <td>I End Point Volume (V1)</td>
+                        <td><strong>{{ v1 }} mL</strong></td>
+                    </tr>
+                    <tr>
+                        <td>II End Point Volume (V2)</td>
+                        <td><strong>{{ v2 }} mL</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Volume of NaOH for CH3COOH (V3 = V2 − V1)</td>
+                        <td><strong>{{ v3 }} mL</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Strength of Hydrochloric Acid (N2)</td>
+                        <td><strong>{{ N2 }} N</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Strength of Acetic Acid (N4)</td>
+                        <td><strong>{{ N4 }} N</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Amount of HCl present in whole given solution</td>
+                        <td><strong>{{ Amount_HCl }} g</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Amount of Acetic Acid present in whole given solution</td>
+                        <td><strong>{{ Amount_CH3COOH }} g</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <div class="button-group">
+            <a href="/exp6/" class="btn btn-primary">New Calculation</a>
+        </div>
+    </div>
+
+    <script>
+        const graphData = JSON.parse('{{ graph_data | tojson | safe }}');
+
+        const ctx = document.getElementById('conductGraph').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: graphData.labels,
+                datasets: [
+                    {
+                        label: 'Conductance',
+                        data: graphData.conductance,
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                        tension: 0.1,
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'Line 1',
+                        data: graphData.line1,
+                        borderColor: '#2563eb',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Line 2',
+                        data: graphData.line2,
+                        borderColor: '#059669',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Line 3',
+                        data: graphData.line3,
+                        borderColor: '#dc2626',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Conductance vs Volume of NaOH'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Volume of NaOH added (mL)' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Conductance (ohm⁻¹)' }
+                    }
+                }
+            }
+        });
+
+        function downloadGraph() {
+            const link = document.createElement('a');
+            link.download = 'mixture-conductometry-graph.png';
+            link.href = document.getElementById('conductGraph').toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+
+</html>

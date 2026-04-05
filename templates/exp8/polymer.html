@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 8 - Polymer Viscosity</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Experiment 8: Determination of Molecular Weight of a Polymer by Viscosity Average Method</h1>
+        
+        <form method="POST" id="experimentForm">
+            <section class="experiment-section" id="observationSection">
+                <h2>Input</h2>
+                <div class="form-group">
+                    <label>Polymer Name:</label>
+                    <select name="polymer_system" id="polymerSystem">
+                        <option value="polystyrene">Polystyrene</option>
+                        <option value="pmma">PMMA</option>
+                        <option value="pvc">PVC</option>
+                        <option value="polyethylene">Polyethylene</option>
+                        <option value="polypropylene">Polypropylene</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Flow time of solvent (t₀) in seconds:</label>
+                    <input type="number" step="0.01" name="t0" id="t0" placeholder="Enter flow time">
+                </div>
+                <div class="form-group">
+                    <label>Enter number of readings:</label>
+                    <input type="number" id="readings" min="3" max="10" placeholder="Enter any value" onchange="generateTable()">
+                    <button type="button" onclick="generateTable()">Generate Table</button>
+                </div>
+                
+                <table class="titration-table" id="polymerTable">
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Concentration C (g/dL)</th>
+                            <th>Flow time (t sec)</th>
+                            <th>Relative viscosity (ηr)</th>
+                            <th>Specific viscosity (ηsp)</th>
+                            <th>Reduced viscosity (ηred)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" onclick="calculateResults()">Calculate</button>
+            </div>
+        </form>
+        
+        <div id="resultSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Results</h2>
+                
+                <div class="graph-container">
+                    <canvas id="polymerGraph" width="600" height="350"></canvas>
+                    <p class="graph-caption">Reduced viscosity vs Concentration</p>
+                </div>
+                
+                <div class="result-box">
+                    <h3>Calculation</h3>
+                    <p>Intrinsic Viscosity [η] = <strong><span id="r_intrinsic"></span> dL/g</strong></p>
+                    <p>Molecular Weight M = ([η] / K)<sup>1/a</sup> = (<span id="r_calc_eta"></span> / <span id="r_calc_k"></span>)<sup>1/<span id="r_calc_a"></span></sup> = <strong><span id="r_mw"></span> g/mol</strong></p>
+                </div>
+                
+                <div class="result-box final-result">
+                    <h3>Final Result</h3>
+                    <table class="result-table">
+                        <tr><td>Intrinsic Viscosity [η]</td><td><strong><span id="rf_intrinsic"></span> dL/g</strong></td></tr>
+                        <tr><td>Molecular Weight (M)</td><td><strong><span id="rf_mw"></span> g/mol</strong></td></tr>
+                    </table>
+                </div>
+            </section>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="editValues()">Edit</button>
+                <button type="button" class="btn btn-primary" onclick="showDownloadFull()">Download Full Report</button>
+            </div>
+        </div>
+        
+        <div id="downloadFullSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Download Full Report</h2>
+                <form method="POST" action="/exp8/download_pdf" target="_blank">
+                    <input type="hidden" name="result_data" id="resultDataFull">
+                    <input type="hidden" name="table_data" id="tableDataFull">
+                    <input type="hidden" name="include_graph" value="true">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" name="student_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Registration Number:</label>
+                        <input type="text" name="reg_number" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" onclick="prepareTableDataFull(this)">Generate PDF</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideDownloadFull()">Cancel</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+    
+    <script>
+        const MARK_HOUWINK = {
+            'polystyrene': {'K': 1.1e-4, 'a': 0.73, 'name': 'Polystyrene'},
+            'pmma': {'K': 5.5e-4, 'a': 0.76, 'name': 'PMMA'},
+            'pvc': {'K': 6.3e-4, 'a': 0.62, 'name': 'PVC'},
+            'polyethylene': {'K': 6.2e-4, 'a': 0.70, 'name': 'Polyethylene'},
+            'polypropylene': {'K': 1.5e-4, 'a': 0.75, 'name': 'Polypropylene'}
+        };
+        
+        let polymerChart = null;
+        let currentResultData = null;
+        
+        function generateTable() {
+            const readings = parseInt(document.getElementById('readings').value) || 0;
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            if (readings <= 0) return;
+            
+            for (let i = 0; i < readings; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="number" step="0.01" name="concentrations" placeholder="Enter your data" required onchange="calculateRow(this)"></td>
+                    <td><input type="number" step="0.01" name="flow_times" placeholder="Flow time" required onchange="calculateRow(this)"></td>
+                    <td class="calc-cell">-</td>
+                    <td class="calc-cell">-</td>
+                    <td class="calc-cell">-</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        function calculateRow(changedInput) {
+            const t0 = parseFloat(document.getElementById('t0').value) || 0;
+            if (t0 <= 0) return;
+            
+            const rows = document.querySelectorAll('#tableBody tr');
+            
+            for (let row of rows) {
+                const conc = parseFloat(row.querySelector('input[name="concentrations"]').value) || 0;
+                const t = parseFloat(row.querySelector('input[name="flow_times"]').value) || 0;
+                
+                if (conc > 0 && t > 0) {
+                    const eta_r = t / t0;
+                    const eta_sp = eta_r - 1;
+                    const eta_red = eta_sp / conc;
+                    
+                    row.cells[3].textContent = eta_r.toFixed(4);
+                    row.cells[4].textContent = eta_sp.toFixed(4);
+                    row.cells[5].textContent = eta_red.toFixed(4);
+                } else {
+                    row.cells[3].textContent = '-';
+                    row.cells[4].textContent = '-';
+                    row.cells[5].textContent = '-';
+                }
+            }
+        }
+        
+        function linear_regression(x, y) {
+            const n = x.length;
+            if (n < 2) return { m: 0, c: 0 };
+            
+            const sum_x = x.reduce((a, b) => a + b, 0);
+            const sum_y = y.reduce((a, b) => a + b, 0);
+            const sum_xy = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+            const sum_x2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+            
+            const denom = n * sum_x2 - sum_x * sum_x;
+            if (denom === 0) return { m: 0, c: 0 };
+            
+            const m = (n * sum_xy - sum_x * sum_y) / denom;
+            const c = (sum_y - m * sum_x) / n;
+            
+            return { m, c };
+        }
+        
+        function calculateResults() {
+            const polymerSystem = document.getElementById('polymerSystem').value;
+            const t0 = parseFloat(document.getElementById('t0').value);
+            
+            if (isNaN(t0) || t0 <= 0) {
+                alert('Please enter flow time of solvent (t₀)');
+                return;
+            }
+            
+            const concentrations = [];
+            const flow_times = [];
+            document.querySelectorAll('#tableBody tr').forEach(function(row) {
+                const conc = parseFloat(row.querySelector('input[name="concentrations"]').value);
+                const t = parseFloat(row.querySelector('input[name="flow_times"]').value);
+                if (!isNaN(conc) && !isNaN(t)) {
+                    concentrations.push(conc);
+                    flow_times.push(t);
+                }
+            });
+            
+            if (concentrations.length < 3) {
+                alert('Please enter at least 3 readings');
+                return;
+            }
+            
+            const data = [];
+            for (let i = 0; i < concentrations.length; i++) {
+                const c = concentrations[i];
+                const t = flow_times[i];
+                const eta_r = t / t0;
+                const eta_sp = eta_r - 1;
+                const eta_red = eta_sp / c;
+                data.push({
+                    conc: c,
+                    eta_r: round(eta_r, 4),
+                    eta_sp: round(eta_sp, 4),
+                    eta_red: round(eta_red, 4)
+                });
+            }
+            
+            const x = data.map(d => d.conc);
+            const y = data.map(d => d.eta_red);
+            
+            const { m, c } = linear_regression(x, y);
+            const intrinsic_viscosity = c;
+            const system = MARK_HOUWINK[polymerSystem];
+            const molecular_weight = Math.pow(intrinsic_viscosity / system.K, 1 / system.a);
+            
+            const trend_line = x.map(xi => m * xi + c);
+            
+            document.getElementById('r_intrinsic').textContent = intrinsic_viscosity.toFixed(4);
+            document.getElementById('r_calc_eta').textContent = intrinsic_viscosity.toFixed(4);
+            document.getElementById('r_calc_k').textContent = system.K;
+            document.getElementById('r_calc_a').textContent = system.a;
+            document.getElementById('r_mw').textContent = molecular_weight.toFixed(2);
+            
+            document.getElementById('rf_intrinsic').textContent = intrinsic_viscosity.toFixed(4);
+            document.getElementById('rf_mw').textContent = molecular_weight.toFixed(2);
+            
+            drawGraph(x, y, trend_line);
+            
+            const resultData = {
+                polymer: polymerSystem,
+                polymer_name: system.name,
+                t0: t0,
+                K: system.K,
+                a_val: system.a,
+                intrinsic: intrinsic_viscosity,
+                molecular_weight: molecular_weight,
+                concentrations: concentrations,
+                flow_times: flow_times,
+                data: data,
+                trend_line: trend_line
+            };
+            currentResultData = resultData;
+            document.getElementById('resultDataFull').value = JSON.stringify(resultData);
+            
+            document.getElementById('resultSection').style.display = 'block';
+            document.getElementById('resultSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function drawGraph(x, y, trend_line) {
+            const ctx = document.getElementById('polymerGraph').getContext('2d');
+            
+            if (polymerChart) polymerChart.destroy();
+            
+            polymerChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: x,
+                    datasets: [
+                        {
+                            label: 'Reduced Viscosity',
+                            data: y,
+                            borderColor: '#dc2626',
+                            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                            tension: 0.1,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Trend Line',
+                            data: trend_line,
+                            borderColor: '#2563eb',
+                            borderDash: [5, 5],
+                            tension: 0,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Reduced viscosity vs Concentration'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Concentration C (g/dL)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Reduced Viscosity (ηred)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function round(num, decimals) {
+            return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+        }
+        
+        function editValues() {
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('observationSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function showDownloadFull() {
+            document.getElementById('downloadFullSection').style.display = 'block';
+            document.getElementById('downloadFullSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function hideDownloadFull() {
+            document.getElementById('downloadFullSection').style.display = 'none';
+        }
+        
+        function prepareTableDataFull(btn) {
+            let tableData = [];
+            
+            document.querySelectorAll('#tableBody tr').forEach(function(row) {
+                const inputs = row.querySelectorAll('input');
+                const conc = inputs[0] ? inputs[0].value : '';
+                const flow_time = inputs[1] ? inputs[1].value : '';
+                const eta_r = row.cells[3] ? row.cells[3].textContent : '';
+                const eta_sp = row.cells[4] ? row.cells[4].textContent : '';
+                const eta_red = row.cells[5] ? row.cells[5].textContent : '';
+                tableData.push({ conc: conc, flow_time: flow_time, eta_r: eta_r, eta_sp: eta_sp, eta_red: eta_red });
+            });
+            
+            const jsonStr = JSON.stringify(tableData);
+            document.getElementById('tableDataFull').value = jsonStr;
+            document.getElementById('resultDataFull').value = JSON.stringify(currentResultData);
+            
+            if (btn) btn.closest('form').submit();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 2 - Chloride Estimation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+{% include 'partials/header.html' %}
+    <div class="container">
+        <a href="/calculations" class="back-link">← Back to Experiments</a>
+        <h1>Experiment 2: Estimation of Chloride (Mohr's Method)</h1>
+
+        <form method="POST" id="experimentForm">
+            <section class="experiment-section" id="titration1Section">
+                <h2>Titration 1 - Standardization of AgNO3</h2>
+
+                <div class="form-group">
+                    <label>Volume of NaCl (mL):</label>
+                    <input type="number" step="0.01" name="nacl_volume" id="naclVolume" placeholder="Enter volume">
+                </div>
+
+                <div class="form-group">
+                    <label>Normality of NaCl:</label>
+                    <input type="number" step="0.01" name="norm_nacl" id="normNacl" placeholder="Enter normality">
+                </div>
+
+                <div class="form-group">
+                    <label>Number of readings:</label>
+                    <input type="number" name="t1_readings" id="t1_readings" min="0" max="10" placeholder="Enter any value"
+                        onchange="generateTable('t1')">
+                    <button type="button" onclick="generateTable('t1')">Generate Table</button>
+                </div>
+
+                <table class="titration-table" id="t1_table">
+                    <thead>
+                        <tr>
+                            <th>S.N</th>
+                            <th>Initial Burette</th>
+                            <th>Final Burette</th>
+                            <th>Volume Used</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t1_tableBody">
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="experiment-section" id="titration2Section">
+                <h2>Titration 2 - Sample Analysis</h2>
+
+                <div class="form-group">
+                    <label>Volume of Sample (mL):</label>
+                    <input type="number" step="0.01" name="sample_volume" id="sampleVolume" placeholder="Enter volume">
+                </div>
+
+                <div class="form-group">
+                    <label>Number of readings:</label>
+                    <input type="number" name="t2_readings" id="t2_readings" min="0" max="10" placeholder="Enter any value"
+                        onchange="generateTable('t2')">
+                    <button type="button" onclick="generateTable('t2')">Generate Table</button>
+                </div>
+
+                <table class="titration-table" id="t2_table">
+                    <thead>
+                        <tr>
+                            <th>S.N</th>
+                            <th>Initial Burette</th>
+                            <th>Final Burette</th>
+                            <th>Volume Used</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t2_tableBody">
+                    </tbody>
+                </table>
+            </section>
+
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" onclick="calculateResults()">Calculate Result</button>
+            </div>
+        </form>
+
+        <div id="resultSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Results</h2>
+                <div class="result-box">
+                    <h3>Titration 1 - Standardization</h3>
+                    <p>Volume of NaCl: <span id="r_nacl_vol"></span> mL</p>
+                    <p>Normality of NaCl: <span id="r_norm_nacl"></span> N</p>
+                    <p>Volume of AgNO3 Used: <span id="r_v1"></span> mL</p>
+                    <p>Normality of AgNO3: <span id="r_norm_agno3"></span> N</p>
+                </div>
+                <div class="result-box">
+                    <h3>Titration 2 - Sample Analysis</h3>
+                    <p>Volume of Sample: <span id="r_sample_vol"></span> mL</p>
+                    <p>Volume of AgNO3 Used: <span id="r_v2"></span> mL</p>
+                </div>
+                <div class="result-box final-result">
+                    <h3>Final Result</h3>
+                    <p>Normality of Sample: <strong><span id="r_norm_sample"></span> N</strong></p>
+                    <p>Amount of Chloride: <strong><span id="r_chloride"></span> mg/L</strong></p>
+                </div>
+            </section>
+
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="editValues()">Edit Values</button>
+                <button type="button" class="btn btn-primary" onclick="showDownloadForm()">Download Calculation</button>
+            </div>
+        </div>
+
+        <div id="downloadSection" style="display: none;">
+            <section class="experiment-section">
+                <h2>Download Calculation</h2>
+                <form method="POST" action="/exp2/download_pdf">
+                    <input type="hidden" name="result_data" id="resultData">
+                    <input type="hidden" name="table_data" id="tableData">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" name="student_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Registration Number:</label>
+                        <input type="text" name="reg_number" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary" onclick="prepareTableData()">Generate PDF</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideDownloadForm()">Cancel</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        function generateTable(titration) {
+            const readingsInput = document.getElementById(titration + '_readings');
+            const readings = parseInt(readingsInput.value) || 0;
+            const tbody = document.getElementById(titration + '_tableBody');
+            tbody.innerHTML = '';
+
+            for (let i = 0; i < readings; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="number" step="0.01" name="${titration}_initial_${i}" value="0" onchange="calculateVolume(this, '${titration}', ${i})"></td>
+                    <td><input type="number" step="0.01" name="${titration}_final_${i}" value="0" onchange="calculateVolume(this, '${titration}', ${i})"></td>
+                    <td class="calc-cell" id="${titration}_vol_${i}">0</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        function calculateVolume(changedInput, titration, rowIndex) {
+            const row = changedInput.closest('tr');
+            const initial = parseFloat(row.querySelector('input[name="' + titration + '_initial_' + rowIndex + '"]').value) || 0;
+            const final = parseFloat(row.querySelector('input[name="' + titration + '_final_' + rowIndex + '"]').value) || 0;
+            const volume = Math.abs(final - initial);
+            document.getElementById(titration + '_vol_' + rowIndex).textContent = volume.toFixed(2);
+        }
+
+        function calculateResults() {
+            const t1Readings = parseInt(document.getElementById('t1_readings').value) || 0;
+            const t2Readings = parseInt(document.getElementById('t2_readings').value) || 0;
+
+            let v1List = [];
+            for (let i = 0; i < t1Readings; i++) {
+                const vol = parseFloat(document.getElementById('t1_vol_' + i).textContent) || 0;
+                v1List.push(vol);
+            }
+
+            let v2List = [];
+            for (let i = 0; i < t2Readings; i++) {
+                const vol = parseFloat(document.getElementById('t2_vol_' + i).textContent) || 0;
+                v2List.push(vol);
+            }
+
+            const v1 = v1List.length > 0 ? Math.min(...v1List.filter(v => v > 0)) : 0;
+            const v2 = v2List.length > 0 ? Math.min(...v2List.filter(v => v > 0)) : 0;
+            const naclVol = parseFloat(document.getElementById('naclVolume').value) || 20;
+            const normNacl = parseFloat(document.getElementById('normNacl').value) || 0.1;
+            const sampleVol = parseFloat(document.getElementById('sampleVolume').value) || 20;
+
+            const normAgno3 = (normNacl * naclVol) / v1;
+            const normSample = (normAgno3 * v2) / sampleVol;
+            const chlorideAmount = normSample * 1000 * 35.45;
+
+            document.getElementById('r_nacl_vol').textContent = naclVol.toFixed(2);
+            document.getElementById('r_norm_nacl').textContent = normNacl.toFixed(4);
+            document.getElementById('r_v1').textContent = v1.toFixed(2);
+            document.getElementById('r_norm_agno3').textContent = normAgno3.toFixed(4);
+            document.getElementById('r_sample_vol').textContent = sampleVol.toFixed(2);
+            document.getElementById('r_v2').textContent = v2.toFixed(2);
+            document.getElementById('r_norm_sample').textContent = normSample.toFixed(4);
+            document.getElementById('r_chloride').textContent = chlorideAmount.toFixed(2);
+
+            const resultData = {
+                v1: v1, v2: v2,
+                v1List: v1List, v2List: v2List,
+                naclVol: naclVol, normNacl: normNacl, sampleVol: sampleVol,
+                normAgno3: normAgno3,
+                normSample: normSample,
+                chlorideAmount: chlorideAmount
+            };
+            document.getElementById('resultData').value = JSON.stringify(resultData);
+
+            document.getElementById('resultSection').style.display = 'block';
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function editValues() {
+            document.getElementById('titration1Section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showDownloadForm() {
+            document.getElementById('downloadSection').style.display = 'block';
+            document.getElementById('downloadSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideDownloadForm() {
+            document.getElementById('downloadSection').style.display = 'none';
+        }
+
+        function prepareTableData() {
+            const t1Readings = parseInt(document.getElementById('t1_readings').value) || 0;
+            const t2Readings = parseInt(document.getElementById('t2_readings').value) || 0;
+
+            let tableData = { t1: [], t2: [] };
+
+            for (let i = 0; i < t1Readings; i++) {
+                const row = document.querySelector('#t1_tableBody tr:nth-child(' + (i + 1) + ')');
+                if (row) {
+                    const inputs = row.querySelectorAll('input');
+                    tableData.t1.push({
+                        initial: inputs[0].value,
+                        final: inputs[1].value,
+                        volume: document.getElementById('t1_vol_' + i).textContent
+                    });
+                }
+            }
+
+            for (let i = 0; i < t2Readings; i++) {
+                const row = document.querySelector('#t2_tableBody tr:nth-child(' + (i + 1) + ')');
+                if (row) {
+                    const inputs = row.querySelectorAll('input');
+                    tableData.t2.push({
+                        initial: inputs[0].value,
+                        final: inputs[1].value,
+                        volume: document.getElementById('t2_vol_' + i).textContent
+                    });
+                }
+            }
+
+            document.getElementById('tableData').value = JSON.stringify(tableData);
+        }
+    </script>
+</body>
+
+</html>

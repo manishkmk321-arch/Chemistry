@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Lab Record</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    {% include 'partials/header.html' %}
+    <div class="container">
+        <header>
+            <h1>Chemistry Lab Record</h1>
+            <p>Select an option</p>
+        </header>
+        <div class="home-buttons">
+            <a href="/view_pdf" class="btn btn-primary">
+                <i class="fa-solid fa-eye"></i>
+                View PDF
+            </a>
+            <a href="/calculations" class="btn btn-secondary">
+                <i class="fa-solid fa-square-root-variable"></i>
+                Calculations
+            </a>
+        </div>
+    </div>
+</body>
+</html>

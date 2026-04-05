@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titration 2 - Sample vs AgNO3</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <a href="/exp2/titration1_calc" class="back-link">← Back</a>
+        <h1>Titration 2: Sample vs AgNO3</h1>
+        
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+        
+        <form method="POST">
+            <div class="form-group">
+                <label>Number of readings:</label>
+                <input type="number" name="readings" id="readings" min="1" max="10" value="3" required>
+                <button type="button" onclick="generateTable()">Generate Table</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Volume of Sample (mL):</label>
+                <input type="number" step="0.01" name="sample_volume" value="20" required>
+            </div>
+            
+            <table class="titration-table">
+                <thead>
+                    <tr>
+                        <th>S.N</th>
+                        <th>Vol. of Sample (mL)</th>
+                        <th>Initial Burette</th>
+                        <th>Final Burette</th>
+                        <th>Vol. of AgNO3</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            
+            <div class="form-group">
+                <label>Indicator:</label>
+                <input type="text" value="Potassium Chromate" readonly>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Calculate & Results</button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        function generateTable() {
+            const readings = parseInt(document.getElementById('readings').value) || 3;
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            for (let i = 0; i < readings; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="number" step="0.01" name="sample_vol" value="20" readonly></td>
+                    <td><input type="number" step="0.01" name="initial_${i}" required></td>
+                    <td><input type="number" step="0.01" name="final_${i}" required></td>
+                    <td class="calc-cell">-</td>
+                `;
+                tbody.appendChild(row);
+            }
+            
+            document.querySelectorAll('input[name^="initial_"], input[name^="final_"]').forEach(input => {
+                input.addEventListener('input', calculateVolumes);
+            });
+        }
+        
+        function calculateVolumes() {
+            const rows = document.querySelectorAll('#tableBody tr');
+            rows.forEach((row, i) => {
+                const initial = parseFloat(row.querySelector(`input[name="initial_${i}"]`).value) || 0;
+                const final = parseFloat(row.querySelector(`input[name="final_${i}"]`).value) || 0;
+                row.cells[4].textContent = Math.abs(final - initial).toFixed(2);
+            });
+        }
+        
+        document.getElementById('readings').addEventListener('change', generateTable);
+        generateTable();
+    </script>
+</body>
+</html>

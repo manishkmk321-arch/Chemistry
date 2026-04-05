@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment 8 - Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <a href="/exp8/" class="back-link">← Back to Experiment</a>
+        <h1>Experiment 8: Results</h1>
+        
+        <section class="experiment-section">
+            <h2>Observation Table</h2>
+            <table class="titration-table">
+                <thead>
+                    <tr>
+                        <th>S.N.</th>
+                        <th>Concentration C (g/dL)</th>
+                        <th>Flow time (t sec)</th>
+                        <th>Relative viscosity (ηr)</th>
+                        <th>Specific viscosity (ηsp)</th>
+                        <th>Reduced viscosity (ηred)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ row.conc }}</td>
+                        <td>-</td>
+                        <td>{{ row.eta_r }}</td>
+                        <td>{{ row.eta_sp }}</td>
+                        <td>{{ row.eta_red }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        
+        <section class="experiment-section">
+            <h2>Graph</h2>
+            <div class="graph-container">
+                <canvas id="graph"></canvas>
+                <button onclick="downloadGraph()" class="btn btn-secondary">Download Graph</button>
+            </div>
+        </section>
+        
+        <section class="experiment-section">
+            <h2>Calculation</h2>
+            <p>Using linear fit: ηred = mC + b</p>
+            <p>Intrinsic viscosity [η] = intercept (b) = {{ intrinsic }} dL/g</p>
+            <p>Using Mark-Houwink equation: [η] = K M<sup>a</sup></p>
+            <p>K = {{ K }}, a = {{ a_val }}</p>
+            <p>Mv = ([η] / K)<sup>1/a</sup></p>
+        </section>
+        
+        <section class="experiment-section">
+            <h2>Final Result</h2>
+            <div class="result-box final-result">
+                <h3>RESULT</h3>
+                <table class="result-table">
+                    <tr>
+                        <td>Polymer Name</td>
+                        <td><strong>{{ polymer }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Intrinsic viscosity [η]</td>
+                        <td><strong>{{ intrinsic }} dL/g</strong></td>
+                    </tr>
+                    <tr>
+                        <td>K</td>
+                        <td><strong>{{ K }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>a</td>
+                        <td><strong>{{ a_val }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Viscosity average molecular weight (Mv)</td>
+                        <td><strong>{{ mw }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+        
+        <div class="button-group">
+            <a href="/exp8/" class="btn btn-primary">New Calculation</a>
+        </div>
+    </div>
+    
+    <script>
+        const ctx = document.getElementById('graph').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ concentrations|tojson }},
+                datasets: [
+                    {
+                        label: 'Reduced Viscosity',
+                        data: {{ eta_red|tojson }},
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.1,
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'Trend Line',
+                        data: {{ trend_line|tojson }},
+                        borderColor: '#dc2626',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Reduced viscosity vs Concentration'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Concentration (g/dL)' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Reduced viscosity (ηred)' }
+                    }
+                }
+            }
+        });
+        
+        function downloadGraph() {
+            const link = document.createElement('a');
+            link.download = 'polymer-viscosity-graph.png';
+            link.href = document.getElementById('graph').toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
