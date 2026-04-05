@@ -6,3 +6,5 @@ __pycache__/
 Downloads/
 *.sqlite3
 *.db
+.vercel
+*.pdf
