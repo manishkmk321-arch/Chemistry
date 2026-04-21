@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, send_file, redirect, url_for
-from calculations.calculation1 import exp1_bp
-# from calculations.calculation2 import exp2_bp
+# from calculations.calculation1 import exp1_bp
+from calculations.calculation2 import exp2_bp
 # from calculations.calculation3 import exp3_bp
 # from calculations.calculation4 import exp4_bp
 # from calculations.calculation5 import exp5_bp
@@ -13,18 +13,18 @@ app = Flask(__name__)
 app.secret_key = "chemistry_lab_secret_key_123"
 
 EXPERIMENTS = [
-    {"id": 1, "name": "DETERMINATION OF HARDNESS (Ca²⁺) OF WATER USING EDTA COMPLEXOMETRY METHOD", "slug": "exp1"},
-    # {"id": 2, "name": "ESTIMATION OF AMOUNT OF CHLORIDE CONTENT OF A WATER SAMPLE", "slug": "exp2"},
+    # {"id": 1, "name": "DETERMINATION OF HARDNESS (Ca²⁺) OF WATER USING EDTA COMPLEXOMETRY METHOD", "slug": "exp1"},
+    {"id": 1, "name": "ESTIMATION OF AMOUNT OF CHLORIDE CONTENT OF A WATER SAMPLE", "slug": "exp2"},
     # {"id": 3, "name": "DETERMINATION OF THE AMOUNT OF SODIUM CARBONATE AND SODIUM HYDROXIDE IN A MIXTURE BY TITRATION", "slug": "exp3"},
     # {"id": 4, "name": "DETERMINATION OF STRENGTH OF AN ACID USING pH METER", "slug": "exp4"},
     # {"id": 5, "name": "DETERMINATION OF STRENGTH OF AN ACID BY CONDUCTOMETRY", "slug": "exp5"},
-    # {"id": 6, "name": "DETERMINATION OF THE STRENGTH OF A MIXTURE OF ACETIC ACID AND HYDROCHLORIC ACID BY CONDUCTOMETRY", "slug": "exp6"},
+    # {"id": 1, "name": "DETERMINATION OF THE STRENGTH OF A MIXTURE OF ACETIC ACID AND HYDROCHLORIC ACID BY CONDUCTOMETRY", "slug": "exp6"},
     # {"id": 7, "name": "DETERMINATION OF FERROUS ION USING POTASSIUM DICHROMATE BY POTENTIOMETRIC TITRATION", "slug": "exp7"},
     # {"id": 8, "name": "DETERMINATION OF MOLECULAR WEIGHT OF A POLYMER BY VISCOSITY AVERAGE METHOD", "slug": "exp8"},
 ]
 
-app.register_blueprint(exp1_bp, url_prefix="/exp1")
-# app.register_blueprint(exp2_bp, url_prefix="/exp2")
+# app.register_blueprint(exp1_bp, url_prefix="/exp1")
+app.register_blueprint(exp2_bp, url_prefix="/exp2")
 # app.register_blueprint(exp3_bp, url_prefix="/exp3")
 # app.register_blueprint(exp4_bp, url_prefix="/exp4")
 # app.register_blueprint(exp5_bp, url_prefix="/exp5")
