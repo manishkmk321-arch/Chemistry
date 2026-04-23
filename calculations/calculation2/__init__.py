@@ -74,20 +74,26 @@ def download_pdf():
         elements.append(Paragraph("- No fair titration readings -", normal_style))
         elements.append(Spacer(1, 15))
         
+    norm_agno3 = result_data.get('normAgno3') or 0
+    v2 = result_data.get('v2') or 0
+    sample_vol = result_data.get('sampleVol') or 0
+    norm_sample = result_data.get('normSample') or 0
+    chloride_amount = result_data.get('chlorideAmount') or 0
+    
     elements.append(Paragraph("CALCULATIONS", h2_style))
     elements.append(Paragraph("Formula: N(Sample) = (N(AgNO3) × V(AgNO3)) / V(Sample)", normal_style))
-    elements.append(Paragraph(f"         = ({result_data.get('normAgno3', 0):.4f} × {result_data.get('v2', 0):.2f}) / {result_data.get('sampleVol', 0)}", calc_style))
-    elements.append(Paragraph(f"         = {result_data.get('normSample', 0):.4f} N", calc_style))
+    elements.append(Paragraph(f"         = ({norm_agno3:.4f} × {v2:.2f}) / {sample_vol}", calc_style))
+    elements.append(Paragraph(f"         = {norm_sample:.4f} N", calc_style))
     elements.append(Spacer(1, 10))
     
     elements.append(Paragraph("Formula: Amount of Chloride = N × 1000 × 35.45", normal_style))
-    elements.append(Paragraph(f"         = {result_data.get('normSample', 0):.4f} × 1000 × 35.45", calc_style))
-    elements.append(Paragraph(f"         = {result_data.get('chlorideAmount', 0):.2f} mg/L", calc_style))
+    elements.append(Paragraph(f"         = {norm_sample:.4f} × 1000 × 35.45", calc_style))
+    elements.append(Paragraph(f"         = {chloride_amount:.2f} mg/L", calc_style))
     elements.append(Spacer(1, 15))
     
     elements.append(Paragraph("FINAL RESULT", h2_style))
-    elements.append(Paragraph(f"The Normality of Sample is {result_data.get('normSample', 0):.4f} N", normal_style))
-    elements.append(Paragraph(f"The Amount of Chloride is {result_data.get('chlorideAmount', 0):.2f} mg/L", normal_style))
+    elements.append(Paragraph(f"The Normality of Sample is {norm_sample:.4f} N", normal_style))
+    elements.append(Paragraph(f"The Amount of Chloride is {chloride_amount:.2f} mg/L", normal_style))
     
     doc.build(elements)
     buffer.seek(0)
